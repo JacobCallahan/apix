@@ -122,11 +122,16 @@ class AsyncExplorer():
         params = tree.xpath("//table/tbody/tr")
         param_list = []
         for param in params:
-            param_list.append(" ".join([
+            temp_list = [
                 x for x
-                in param.text_content().replace(" ","").split('\n')
+                in param.text_content().replace("  ","").split('\n')
                 if x
-            ][:2]))
+            ]
+            param_list.append(temp_list[:2])
+            # If there is a validation, include it in the results
+            if 'Validations:' in temp_list:
+                param_list[-1].append(temp_list[temp_list.index('Validations:') + 1])
+            param_list[-1] = " ~ ".join(param_list[-1])
         return {'paths': path_list, 'params': param_list}
 
     def explore(self):
