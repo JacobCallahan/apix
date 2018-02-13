@@ -12,10 +12,12 @@ def get_api_list():
         return None
     # get all versions in directory, that aren't diffs
     apis = [
-        api.name for api in api_dir.iterdir()
-        if api.name != '.gitignore'
+        (api.name, api.stat().st_mtime)
+        for api in api_dir.iterdir()
+        if api.is_dir()
     ] or []
-    return sorted(apis)
+    apis = [api for api, _ in sorted(apis, key=lambda x: x[1])]
+    return apis
 
 
 def get_ver_list(api_name):
@@ -33,10 +35,13 @@ def get_ver_list(api_name):
     return sorted(versions, reverse=True)
 
 
-def get_latest(api_name):
+def get_latest(api_name=None):
     """Get the latest api version, if it exists"""
-    api_list = get_ver_list(api_name) or [None]
-    return api_list[0]
+    if not api_name:
+        return get_api_list()[0]
+    else:
+        ver_list = get_ver_list(api_name) or [None]
+        return ver_list[0]
 
 
 def get_previous(api_name, version):
