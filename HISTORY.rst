@@ -2,6 +2,14 @@
 History
 =======
 
+0.2.0(2018-02-15)
+=================
+
++ Added makelib subcommand
++ Added template files for nailgun
++ Allowed apix to assume the most likely arguments, if not specified
++ Other miscellaneous changes
+
 0.1.2(2018-02-13)
 =================
 

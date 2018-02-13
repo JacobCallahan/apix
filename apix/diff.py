@@ -9,13 +9,15 @@ from apix.helpers import get_latest, get_previous, load_api
 
 @attr.s()
 class VersionDiff():
-    api_name = attr.ib()
+    api_name = attr.ib(default=None)
     ver1 = attr.ib(default=None)
     ver2 = attr.ib(default=None)
     _vdiff = attr.ib(default={})
 
     def __attrs_post_init__(self):
         """Load the API versions, if not provided"""
+        if not self.api_name:
+            self.api_name = get_latest()
         if not self.ver1:
             # get the latest saved version
             self.ver1 = get_latest(self.api_name)

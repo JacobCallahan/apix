@@ -5,6 +5,7 @@ import pytest
 import sys
 from apix.explore import AsyncExplorer
 from apix.diff import VersionDiff
+from apix.libtools.libmaker import LibMaker
 from apix.helpers import get_api_list, get_ver_list
 from apix import logger
 
@@ -15,7 +16,7 @@ class Main(object):
         # self.conf = Config()
         parser = argparse.ArgumentParser()
         parser.add_argument(
-            "action", type=str, choices=['explore', 'diff', 'list'],
+            "action", type=str, choices=['explore', 'diff', "makelib", 'list'],
             help="The action to perform.")
         args = parser.parse_args(sys.argv[1:2])
         if not hasattr(self, args.action):
@@ -59,7 +60,7 @@ class Main(object):
         """Determine the changes between two API versions"""
         parser = argparse.ArgumentParser()
         parser.add_argument(
-            "-n", "--api-name", type=str, required=True,
+            "-n", "--api-name", type=str, default=None,
             help="The name of the API (satellite6).")
         parser.add_argument(
             "-l", "--latest-version", type=str, default=None,
@@ -81,6 +82,28 @@ class Main(object):
         )
         vdiff.diff()
         vdiff.save_diff()
+
+    def makelib(self):
+        """Create a library to interact with a specific API version"""
+        parser = argparse.ArgumentParser()
+        parser.add_argument(
+            "-n", "--api-name", type=str, default=None,
+            help="The name of the API (satellite6).")
+        parser.add_argument(
+            "-v", "--version", type=str, default=None,
+            help="The API version we're creating a library for (6.3).")
+        parser.add_argument(
+            "--debug", action="store_true",
+            help="Enable debug loggin level.")
+
+        args = parser.parse_args(sys.argv[2:])
+        if args.debug:
+            logger.setup_logzero(level='debug')
+        libmaker = LibMaker(
+            api_name=args.api_name,
+            api_version=args.version
+        )
+        libmaker.make_lib()
 
     def list(self):
         """List out the API information we have stored"""

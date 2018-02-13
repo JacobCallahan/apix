@@ -13,10 +13,6 @@ from logzero import logger
 from pathlib import Path
 
 
-# async def iter_list(inlist):
-#     for item in inlist:
-#         yield item
-
 @attr.s()
 class AsyncExplorer():
     name = attr.ib(default=None)
@@ -100,7 +96,7 @@ class AsyncExplorer():
             self.name, self.version
         ))
         if fpath.exists():
-            logger.debug('{} already exists. Deleting..'.format(str(fpath)))
+            logger.warning('{} already exists. Deleting..'.format(str(fpath)))
             fpath.unlink()
         # create the directory, if it doesn't exist
         fpath.parent.mkdir(parents=True, exist_ok=True)

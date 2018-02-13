@@ -1,0 +1,469 @@
+# -*- encoding: utf-8 -*-
+"""This module defines all entities which Foreman exposes.
+
+Each class in this module allows you to work with a certain set of logically
+related API paths exposed by the server. For example,
+:class:`nailgun.entities.Host` lets you work with the ``/api/v2/hosts`` API
+path and sub-paths. Each class attribute corresponds an attribute of that
+entity. For example, the ``Host.name`` class attribute represents the name of a
+host. These class attributes are used by the various mixins, such as
+``nailgun.entity_mixins.EntityCreateMixin``.
+
+Several classes contain work-arounds for bugs. These bugs often affect only
+specific server releases, and ideally, the work-arounds should only be
+attempted if communicating with an affected server. However, work-arounds can
+only be conditionally triggered if NailGun has a facility for determining which
+software version the server is running. Until then, the safe route will be
+taken, and all work-arounds will be attempted all the time. Each method that
+makes use of a work-around notes so in its docstring.
+
+:class:`nailgun.entity_mixins.Entity` provides more insight into the inner
+workings of entity classes.
+
+"""
+from datetime import datetime
+from sys import version_info
+
+from fauxfactory import gen_alphanumeric
+from packaging.version import Version
+
+from nailgun import client, entity_fields, signals
+from nailgun.entity_mixins import (
+    Entity,
+    EntityCreateMixin,
+    EntityDeleteMixin,
+    EntityReadMixin,
+    EntitySearchMixin,
+    EntityUpdateMixin,
+    _poll_task,
+    to_json_serializable as to_json
+)
+
+if version_info.major == 2:  # pragma: no cover
+    from httplib import ACCEPTED, NO_CONTENT  # pylint:disable=import-error
+else:  # pragma: no cover
+    from http.client import ACCEPTED, NO_CONTENT  # pylint:disable=import-error
+
+# pylint:disable=too-many-lines
+# The size of this file is a direct reflection of the size of Satellite's API.
+# This file's size has already been significantly cut down through the use of
+# mixins and fields, and cutting the file down in size further would simply
+# obfuscate the design of the entities. It might be possible to place entity
+# definitions in separate modules, though.
+
+# pylint:disable=attribute-defined-outside-init
+# NailGun aims to be like a traditional database ORM and allow uses of the dot
+# operator such as these:
+#
+#     product = Product(server_config, id=5).read()
+#     product.name
+#     product.organization.id
+#
+# Unfortunately, these fields cannot simply be initialized with `None`. These
+# have different effects:
+#
+#     product.description = None; product.update()
+#     del product.description; product.update()
+#
+# The first will delete the product's description, and the second will not
+# touch the product's description.
+
+
+_FAKE_YUM_REPO = 'http://inecas.fedorapeople.org/fakerepos/zoo3/'
+_OPERATING_SYSTEMS = (
+    'AIX',
+    'Altlinux',
+    'Archlinux',
+    'Debian',
+    'Freebsd',
+    'Gentoo',
+    'Junos',
+    'Redhat',
+    'Solaris',
+    'Suse',
+    'Windows',
+)
+
+
+class APIResponseError(Exception):
+    """Indicates an error if response returns unexpected result."""
+
+
+def _handle_response(response, server_config, synchronous=False, timeout=None):
+    """Handle a server's response in a typical fashion.
+
+    Do the following:
+
+    1. Check the server's response for an HTTP status code indicating an error.
+    2. Poll the server for a foreman task to complete if an HTTP 202 (accepted)
+       status code is returned and ``synchronous is True``.
+    3. Immediately return if an HTTP "NO CONTENT" response is received.
+    4. Determine what type of the content returned from server. Depending on
+       the type method should return server's response, with all JSON decoded
+       or just response content itself.
+
+    :param response: A response object as returned by one of the functions in
+        :mod:`nailgun.client` or the requests library.
+    :param server_config: A `nailgun.config.ServerConfig` object.
+    :param synchronous: Should this function poll the server?
+    :param timeout: Maximum number of seconds to wait until timing out.
+            Defaults to ``nailgun.entity_mixins.TASK_TIMEOUT``.
+
+    """
+    response.raise_for_status()
+    if synchronous is True and response.status_code == ACCEPTED:
+        return ForemanTask(
+            server_config, id=response.json()['id']).poll(timeout=timeout)
+    if response.status_code == NO_CONTENT:
+        return
+    if 'application/json' in response.headers.get('content-type', '').lower():
+        return response.json()
+    else:
+        return response.content
+
+
+def _check_for_value(field_name, field_values):
+    """Check to see if ``field_name`` is present in ``field_values``.
+
+    An entity may use this function in its ``__init__`` method to ensure that a
+    parameter required for object instantiation has been passed in. For
+    example, in :class:`nailgun.entities.ContentViewPuppetModule`:
+
+    >>> def __init__(self, server_config=None, **kwargs):
+    >>>     _check_for_value('content_view', kwargs)
+    >>>     # …
+    >>>     self._meta = {
+    >>>         'api_path': '{0}/content_view_puppet_modules'.format(
+    >>>             self.content_view.path('self')
+    >>>         )
+    >>>     }
+
+    :param field_name: A string. A key with this name must be present in
+        ``field_values``.
+    :param field_values: A dict containing field-name to field-value mappings.
+    :raises: ``TypeError`` if ``field_name`` is not present in
+        ``field_values``.
+    :returns: Nothing.
+
+    """
+    if field_name not in field_values:
+        raise TypeError(
+            'A value must be provided for the "{0}" field.'.format(field_name)
+        )
+
+
+def _get_org(server_config, label):
+    """Find an :class:`nailgun.entities.Organization` object.
+
+    :param nailgun.config.ServerConfig server_config: The server that should be
+        searched.
+    :param label: A string. The label of the organization to find.
+    :raises APIResponseError: If exactly one organization is not found.
+    :returns: An :class:`nailgun.entities.Organization` object.
+
+    """
+    organizations = Organization(server_config).search(
+        query={u'search': u'label={0}'.format(label)}
+    )
+    if len(organizations) != 1:
+        raise APIResponseError(
+            u'Could not find exactly one organization with label "{0}". '
+            u'Actual search results: {1}'.format(label, organizations)
+        )
+    return organizations[0].read()
+
+
+def _get_version(server_config):
+    """Return ``server_config.version``, or a default version if not present.
+
+    This method is especially useful when an entity must determine what version
+    the server is. :class:`nailgun.config.ServerConfig` does not currently
+    require the "version" attribute, and if none is provided then none is set.
+    This is often problematic - what version should the server be assumed to be
+    running? This method provides an answer to that question.
+
+    Also see #163.
+
+    :param nailgun.config.ServerConfig server_config: Any old server config may
+        be passed in.
+    :returns: A ``packaging.version.Version`` object. The version on
+        ``server_config`` is returned if present, or a default version of '1!0'
+        (epoch 1, version 0) otherwise.
+
+    """
+    return getattr(server_config, 'version', Version('1!0'))
+
+
+def to_json_serializable(obj):
+    """Just an alias to entity_mixins.to_json_seriazable so this module can
+    be used as a facade
+
+    :param obj: entity or any json serializable object
+
+    :return: serializable object
+
+    """
+    return to_json(obj)
+
+class AbstractComputeResource(
+        Entity,
+        EntityCreateMixin,
+        EntityDeleteMixin,
+        EntityReadMixin,
+        EntitySearchMixin,
+        EntityUpdateMixin):
+    """A representation of a Compute Resource entity."""
+
+    def __init__(self, server_config=None, **kwargs):
+        # A user may decide to write this if trying to figure out what provider
+        # a compute resource has:
+        #
+        #     entities.AbstractComputeResource(id=…).read().provider
+        #
+        # A user may also decide to instantiate a concrete compute resource
+        # class:
+        #
+        #     entities.LibvirtComputeResource(id=…).read()
+        #
+        # In the former case, we define a set of fields — end of story. In the
+        # latter case, that set of fields is updated with values provided by
+        # the child class.
+        fields = {
+            'description': entity_fields.StringField(),
+            'location': entity_fields.OneToManyField(Location),
+            'name': entity_fields.StringField(
+                required=True,
+                str_type='alphanumeric',  # cannot contain whitespace
+                length=(6, 12),
+                unique=True
+            ),
+            'organization': entity_fields.OneToManyField(Organization),
+            'provider': entity_fields.StringField(
+                choices=(
+                    'Docker',
+                    'EC2',
+                    'GCE',
+                    'Libvirt',
+                    'Openstack',
+                    'Ovirt',
+                    'Rackspace',
+                    'Vmware',
+                ),
+            ),
+            'provider_friendly_name': entity_fields.StringField(),
+            'url': entity_fields.URLField(required=True),
+        }
+        fields.update(getattr(self, '_fields', {}))
+        self._fields = fields
+        self._meta = {
+            'api_path': 'api/v2/compute_resources',
+            'server_modes': ('sat'),
+        }
+        super(AbstractComputeResource, self).__init__(server_config, **kwargs)
+
+    def create_payload(self):
+        """Wrap submitted data within an extra dict.
+
+        For more information, see `Bugzilla #1151220
+        <https://bugzilla.redhat.com/show_bug.cgi?id=1151220>`_.
+
+        """
+        return {
+            u'compute_resource': super(
+                AbstractComputeResource,
+                self
+            ).create_payload()
+        }
+
+    def update_payload(self, fields=None):
+        """Wrap submitted data within an extra dict."""
+        return {
+            u'compute_resource': super(
+                AbstractComputeResource,
+                self
+            ).update_payload(fields)
+        }
+
+    @signals.emit(sender=signals.SENDER_CLASS)
+    def update(self, fields=None):
+        """Fetch a complete set of attributes for this entity.
+
+        For more information, see `Bugzilla #1250922
+        <https://bugzilla.redhat.com/show_bug.cgi?id=1250922>`_.
+
+        """
+        self.update_json(fields)
+        return self.read()
+
+
+class AbstractDockerContainer(
+        Entity,
+        EntityCreateMixin,
+        EntityDeleteMixin,
+        EntityReadMixin,
+        EntitySearchMixin):
+    """A representation of a docker container.
+
+    This class is abstract because all containers must come from somewhere, but
+    this class does not have attributes for specifying that information.
+
+    .. WARNING:: A docker compute resource must be specified when creating a
+        docker container.
+
+    """
+
+    def __init__(self, server_config=None, **kwargs):
+        fields = {
+            'attach_stderr': entity_fields.BooleanField(),
+            'attach_stdin': entity_fields.BooleanField(),
+            'attach_stdout': entity_fields.BooleanField(),
+            'command': entity_fields.StringField(required=True, default='top'),
+            'compute_resource': entity_fields.OneToOneField(
+                AbstractComputeResource,
+                required=True,
+            ),
+            'cpu_set': entity_fields.StringField(),
+            'cpu_shares': entity_fields.StringField(),
+            'entrypoint': entity_fields.StringField(),
+            'location': entity_fields.OneToManyField(Location),
+            'memory': entity_fields.StringField(),
+            # The "name" field may be any of a-zA-Z0-9_.-,
+            # "alphanumeric" is a subset of those legal characters.
+            'name': entity_fields.StringField(
+                length=(2, 30),
+                required=True,
+                str_type='alphanumeric',
+                unique=True
+            ),
+            'organization': entity_fields.OneToManyField(Organization),
+            'tty': entity_fields.BooleanField(),
+        }
+        fields.update(getattr(self, '_fields', {}))
+        self._fields = fields
+        self._meta = {
+            'api_path': 'docker/api/v2/containers',
+            'server_modes': ('sat'),
+        }
+        super(AbstractDockerContainer, self).__init__(server_config, **kwargs)
+
+    def path(self, which=None):
+        """Extend ``nailgun.entity_mixins.Entity.path``.
+
+        The format of the returned path depends on the value of ``which``:
+
+        logs
+            /containers/<id>/logs
+        power
+            /containers/<id>/power
+
+        ``super`` is called otherwise.
+
+        """
+        if which in ('logs', 'power'):
+            return '{0}/{1}'.format(
+                super(AbstractDockerContainer, self).path(which='self'),
+                which
+            )
+        return super(AbstractDockerContainer, self).path(which)
+
+    def create_payload(self):
+        """Wrap submitted data within an extra dict.
+
+        For more information, see `Bugzilla #1151220
+        <https://bugzilla.redhat.com/show_bug.cgi?id=1151220>`_.
+
+        """
+        return {
+            u'container': super(AbstractDockerContainer, self).create_payload()
+        }
+
+    @signals.emit(sender=signals.SENDER_CLASS, post_result_name='entity')
+    def create(self, create_missing=None):
+        """Do extra work to fetch a complete set of attributes for this entity.
+
+        For more information, see `Bugzilla #1223540
+        <https://bugzilla.redhat.com/show_bug.cgi?id=1223540>`_.
+
+        """
+        return type(self)(
+            self._server_config,
+            id=self.create_json(create_missing)['id'],
+        ).read()
+
+    def power(self, synchronous=True, **kwargs):
+        """Run a power operation on a container.
+
+        :param synchronous: What should happen if the server returns an HTTP
+            202 (accepted) status code? Wait for the task to complete if
+            ``True``. Immediately return the server's response otherwise.
+        :param kwargs: Arguments to pass to requests.
+        :returns: The server's response, with all JSON decoded.
+        :raises: ``requests.exceptions.HTTPError`` If the server responds with
+            an HTTP 4XX or 5XX message.
+
+        """
+        kwargs = kwargs.copy()  # shadow the passed-in kwargs
+        kwargs.update(self._server_config.get_client_kwargs())
+        response = client.put(self.path('power'), **kwargs)
+        return _handle_response(response, self._server_config, synchronous)
+
+    def logs(self, synchronous=True, **kwargs):
+        """Get logs from this container.
+
+        :param synchronous: What should happen if the server returns an HTTP
+            202 (accepted) status code? Wait for the task to complete if
+            ``True``. Immediately return the server's response otherwise.
+        :param kwargs: Arguments to pass to requests.
+        :returns: The server's response, with all JSON decoded.
+        :raises: ``requests.exceptions.HTTPError`` If the server responds with
+            an HTTP 4XX or 5XX message.
+
+        """
+        kwargs = kwargs.copy()  # shadow the passed-in kwargs
+        kwargs.update(self._server_config.get_client_kwargs())
+        response = client.get(self.path('logs'), **kwargs)
+        return _handle_response(response, self._server_config, synchronous)
+
+
+class AbstractContentViewFilter(
+        Entity,
+        EntityCreateMixin,
+        EntityDeleteMixin,
+        EntityReadMixin,
+        EntityUpdateMixin):
+    """A representation of a Content View Filter entity."""
+
+    def __init__(self, server_config=None, **kwargs):
+        # The `fields={…}; fields.update(…)` idiom lets subclasses add fields.
+        fields = {
+            'content_view': entity_fields.OneToOneField(
+                ContentView,
+                required=True
+            ),
+            'description': entity_fields.StringField(),
+            'type': entity_fields.StringField(
+                choices=('erratum', 'package_group', 'rpm'),
+                required=True,
+            ),
+            'inclusion': entity_fields.BooleanField(),
+            'name': entity_fields.StringField(
+                required=True,
+                str_type='alpha',
+                length=(6, 12),
+                unique=True
+            ),
+            'repository': entity_fields.OneToManyField(Repository),
+        }
+        fields.update(getattr(self, '_fields', {}))
+        self._fields = fields
+        self._meta = {
+            'api_path': 'katello/api/v2/content_view_filters',
+            'server_modes': ('sat'),
+        }
+        super(AbstractContentViewFilter, self).__init__(
+            server_config,
+            **kwargs
+        )
+
+
+~~generated entity classes~~
