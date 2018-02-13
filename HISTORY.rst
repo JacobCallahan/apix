@@ -2,6 +2,14 @@
 History
 =======
 
+0.1.2(2018-02-13)
+=================
+
++ Fixed async behavior, greatly improving url fetch/download time
++ Increased timeout tries to 3
++ Sorted the results by url to account for async results
++ Added more logging output
+
 0.1.1(2018-02-11)
 =================
 

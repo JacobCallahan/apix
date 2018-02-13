@@ -84,12 +84,17 @@ class VersionDiff():
         if not self.ver2:
             logger.warning("No ver2 API found.")
             return None
+        logger.info('Performing diff between {} and {}'.format(self.ver1, self.ver2))
 
         ver1_content = load_api(self.api_name, self.ver1)
+        logger.debug('Loaded {}'.format(self.ver1))
         ver2_content = load_api(self.api_name, self.ver2)
+        logger.debug('Loaded {}'.format(self.ver1))
 
         added = self._dict_diff(ver1_content, ver2_content)
+        logger.debug('Determined added content.')
         removed = self._dict_diff(ver2_content, ver1_content)
+        logger.debug('Determined removed content.')
         self._vdiff = {
             'Added in {} since {}'.format(self.ver1, self.ver2): added,
             'Removed since {}'.format(self.ver2): removed
