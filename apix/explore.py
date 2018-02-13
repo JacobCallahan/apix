@@ -13,9 +13,9 @@ from logzero import logger
 from pathlib import Path
 
 
-async def iter_list(inlist):
-    for item in inlist:
-        yield item
+# async def iter_list(inlist):
+#     for item in inlist:
+#         yield item
 
 @attr.s()
 class AsyncExplorer():
@@ -23,38 +23,45 @@ class AsyncExplorer():
     version = attr.ib(default=None)
     host_url = attr.ib(default=None)
     base_path = attr.ib(default=None)
-    _queue = attr.ib(default=asyncio.Queue(), repr=False)
+    _queue = attr.ib(default=[], repr=False)
     _data = attr.ib(default={}, repr=False)
 
     def __attrs_post_init__(self):
         if not self.version:
             self.version = time.strftime('%Y-%m-%d', time.localtime())
 
-    async def _async_get(self, session, url):
-        with async_timeout.timeout(60):
-            async with session.get(url, verify_ssl=False) as response:
-                return await response.read()
+    async def _async_get(self, session, link):
+        async with session.get(self.host_url + link[1], verify_ssl=False) as response:
+            content = await response.read()
+            logger.debug(link[1])
+            return (link, content)
 
-    async def _async_loop(self, loop, links):
-        async with aiohttp.ClientSession(loop=loop) as session:
-            async for link in iter_list(links):
-                content = await self._async_get(session, self.host_url + link[1])
-                await self._queue.put((link, content))
-                logger.debug(link[1])
+    async def _async_loop(self, links):
+        tasks = []
+        async with aiohttp.ClientSession() as session:
+            for link in links:
+                task = asyncio.ensure_future(
+                    self._async_get(session, link))
+                tasks.append(task)
+            results = await asyncio.gather(*tasks)
+            for result in results:
+                self._queue.append(result)
 
-    def _visit_links(self, links):
+    def _visit_links(self, links, retries=3):
         try:
             loop = asyncio.get_event_loop()
-            loop.run_until_complete(self._async_loop(loop, links))
+            loop.run_until_complete(self._async_loop(links))
         except aiohttp.client_exceptions.ServerDisconnectedError as err:
-            logger.warning('Lost connection to host. Retrying in 10 seconds.')
-            time.sleep(10)
-            loop = asyncio.get_event_loop()
-            loop.run_until_complete(self._async_loop(loop, links))
+            logger.warning('Lost connection to host.{}'.join(
+                'Retrying in 10 seconds' if retries else ''
+            ))
+            if retries:
+                time.sleep(10)
+                self._visit_links(links, retries - 1)
 
     def _link_params(self):
-        while self._queue.qsize():
-            link, content = self._queue.get_nowait()
+        while self._queue:
+            link, content = self._queue.pop(0)
             logger.debug('Scraping {}'.format(link[1]))
             self._data[link[1]] = self.scrape_content(content)
 
@@ -144,7 +151,10 @@ class AsyncExplorer():
                 self.host_url + self.base_path))
             return
         self.base_path = self.base_path.replace('.html', '')  # for next strep
+        logger.info('Starting to explore {}{}'.format(self.host_url, self.base_path))
         links = self.pull_links(result)
         logger.debug('Found {} links!'.format(len(links)))
         self._visit_links(links)
+        # sort the results by link name, to normalize return order
+        self._queue = sorted(self._queue, key=lambda x: x[0][1])
         self._link_params()
