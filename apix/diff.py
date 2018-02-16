@@ -27,34 +27,38 @@ class VersionDiff():
 
     def _dict_diff(self, dict1, dict2):
         """Recursively search a dictionary for differences"""
-        added = {}
+        added, changed = {}, {}
         if dict1 == dict2:
-            return added
+            return added, changed
         for key, values in dict1.items():
             if key in dict2:
                 if not values == dict2[key]:
                     if isinstance(values, dict):
-                        res = self._dict_diff(values, dict2[key])
+                        res, chng = self._dict_diff(values, dict2[key])
                         if res:
                             added[key] = res
+                        if chng:
+                            changed[key] = chng
                     elif isinstance(values, list):
-                        res = self._list_diff(values, dict2[key])
+                        res, chng = self._list_diff(values, dict2[key])
                         if res:
                             added[key] = res
+                        if chng:
+                            changed[key] = chng
                     else:
                         logger.debug('Adding {} => {}'.format(key, values))
                         added[key] = values
             else:
                 logger.debug('Adding {} => {}'.format(key, values))
                 added[key] = values
-        return added
+        return added, changed
 
 
     def _list_diff(self, list1, list2):
         """Recursively search a list for differences"""
-        added = []
+        added, changed = [], []
         if list1 == list2:
-            return added
+            return added, changed
         for item in list1:
             if isinstance(item, dict):
                 found = False
@@ -62,21 +66,38 @@ class VersionDiff():
                     for i, needle in enumerate(list2):
                         if key in needle:
                             found = True
-                            res = self._dict_diff(item, list2[i])
+                            res, chng = self._dict_diff(item, list2[i])
                             if res:
                                 added.append(res)
+                            if chng:
+                                changed.append(chng)
                 if not found:
                     logger.debug('Adding {}'.format(item))
                     added.append(item)
             elif isinstance(item, list):
-                res = self._list_diff(item, list2[list2.index(item)])
+                res, chng = self._list_diff(item, list2[list2.index(item)])
                 if res:
                     added.append(res)
+                if chng:
+                    changed.append(chng)
+            elif ' ~ ' in item:
+                name = item.split('~')[0].strip()
+                found = False
+                for needle in list2:
+                    # look for matching names
+                    if name == needle.split('~')[0].strip():
+                        found = True
+                        if item != needle:
+                            logger.debug('{} changed to {}'.format(item, needle))
+                            changed.append(item)
+                if not found:
+                    logger.debug('Adding {}'.format(item))
+                    added.append(item)
             else:
                 if item not in list2:
                     logger.debug('Adding {}'.format(item))
                     added.append(item)
-        return added
+        return added, changed
 
     def diff(self):
         """Determine the diff between ver1 and ver2"""
@@ -91,14 +112,15 @@ class VersionDiff():
         ver1_content = load_api(self.api_name, self.ver1)
         logger.debug('Loaded {}'.format(self.ver1))
         ver2_content = load_api(self.api_name, self.ver2)
-        logger.debug('Loaded {}'.format(self.ver1))
+        logger.debug('Loaded {}'.format(self.ver2))
 
-        added = self._dict_diff(ver1_content, ver2_content)
-        logger.debug('Determined added content.')
-        removed = self._dict_diff(ver2_content, ver1_content)
+        added, changed = self._dict_diff(ver1_content, ver2_content)
+        logger.debug('Determined added/changed content.')
+        removed, _ = self._dict_diff(ver2_content, ver1_content)
         logger.debug('Determined removed content.')
         self._vdiff = {
             'Added in {} since {}'.format(self.ver1, self.ver2): added,
+            'Changed in {} since {}'.format(self.ver1, self.ver2): changed,
             'Removed since {}'.format(self.ver2): removed
         }
 
