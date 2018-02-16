@@ -2,6 +2,11 @@
 History
 =======
 
+0.2.1(2018-02-15)
+=================
+
++ Improved diff results, separating changed from added/removed
+
 0.2.0(2018-02-15)
 =================
 

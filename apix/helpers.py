@@ -16,7 +16,7 @@ def get_api_list():
         for api in api_dir.iterdir()
         if api.is_dir()
     ] or []
-    apis = [api for api, _ in sorted(apis, key=lambda x: x[1])]
+    apis = [api for api, _ in sorted(apis, key=lambda x: x[1], reverse=True)]
     return apis
 
 
