@@ -1,0 +1,83 @@
+Added in 2.1 since 1.3:
+  entity_one:
+    methods:
+    - update:
+        parameters:
+        - param4  ~ optional ~ number.
+        - param5  ~ optional ~ Must be an Array of nested elements
+        - param7[quantity]  ~ optional ~ number.
+    - meth3:
+        parameters:
+        - search  ~ optional ~ String
+        - page  ~ optional ~ number.
+        - per_page  ~ optional ~ number.
+        - order  ~ optional ~ String
+        - full_result  ~ optional ~ boolean
+        - sort  ~ optional ~ Hash
+        - sort[by]  ~ optional ~ String
+        - sort[order]  ~ optional ~ String
+        - name  ~ optional ~ String
+        paths:
+        - GET /test123/api/entity_one/:id/meth3
+  entity_two:
+    methods:
+    - create:
+        parameters:
+        - param1  ~ required ~ Must be a Hash
+        - param2[name]  ~ required ~ Must be a String
+        - param3[operatingsystem_ids]  ~ optional ~ Must be an array of any type
+        paths:
+        - POST /api/entity_two
+    - destroy:
+        parameters:
+        - id  ~ required ~ Must be an identifier, string from 1 to 128 characters
+          containing only
+        paths:
+        - DELETE /api/entity_two/:id
+    - update:
+        parameters:
+        - search  ~ optional ~ Must be a String
+        - order  ~ optional ~ Must be a String
+        - page  ~ optional ~ Must be a String
+        - per_page  ~ optional ~ Must be a String
+        - param4_id  ~ optional ~ Must be a String
+        paths:
+        - GET /api/entity_two
+        - GET /api/something/:another/entity_two
+Changed in 2.1 since 1.3:
+  entity_one:
+    methods:
+    - create:
+        parameters:
+        - param2_id  ~ required ~ Must be an array of any type
+Removed since 1.3:
+  entity_one:
+    methods:
+    - update:
+        parameters:
+        - param9[quantity]  ~ optional ~ number.
+    - meth2:
+        parameters:
+        - search  ~ optional ~ String
+        - page  ~ optional ~ number.
+        - per_page  ~ optional ~ number.
+        - sort[by]  ~ optional ~ String
+        - sort[order]  ~ optional ~ String
+        - name  ~ optional ~ String
+        paths:
+        - GET /test123/api/entity_one/:id/meth3
+  entity_three:
+    methods:
+    - create:
+        parameters:
+        - param1  ~ required ~ Must be a Hash
+        - param2[name]  ~ required ~ Must be a String
+        - param3[operatingsystem_ids]  ~ optional ~ Must be an array of any type
+        paths:
+        - POST /api/entity_two
+    - destroy:
+        parameters:
+        - id  ~ required ~ Must be an identifier, string from 1 to 128 characters
+          containing only
+        paths:
+        - DELETE /api/entity_two/:id

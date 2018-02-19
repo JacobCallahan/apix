@@ -1,0 +1,43 @@
+entity_one:
+  methods:
+  - create:
+      parameters:
+      - param1  ~ required ~ string from 2 to 128 characters containing only alphanumeric
+        characters,
+      - param2_id  ~ optional ~ Must be an array of any type
+      paths:
+      - POST /test123/api/entity_one/:id/create
+  - update:
+      parameters:
+      - param1  ~ required ~ string from 2 to 128 characters containing only alphanumeric
+        characters,
+      - param3_ids  ~ optional ~ number.
+      - param6[id]  ~ optional ~ String
+      - param9[quantity]  ~ optional ~ number.
+      paths:
+      - PUT /test123/api/entity_one/:id/update
+  - meth2:
+      parameters:
+      - search  ~ optional ~ String
+      - page  ~ optional ~ number.
+      - per_page  ~ optional ~ number.
+      - sort[by]  ~ optional ~ String
+      - sort[order]  ~ optional ~ String
+      - name  ~ optional ~ String
+      paths:
+      - GET /test123/api/entity_one/:id/meth3
+entity_three:
+  methods:
+  - create:
+      parameters:
+      - param1  ~ required ~ Must be a Hash
+      - param2[name]  ~ required ~ Must be a String
+      - param3[operatingsystem_ids]  ~ optional ~ Must be an array of any type
+      paths:
+      - POST /api/entity_two
+  - destroy:
+      parameters:
+      - id  ~ required ~ Must be an identifier, string from 1 to 128 characters containing
+        only
+      paths:
+      - DELETE /api/entity_two/:id
