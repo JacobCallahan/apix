@@ -12,18 +12,20 @@ class VersionDiff():
     api_name = attr.ib(default=None)
     ver1 = attr.ib(default=None)
     ver2 = attr.ib(default=None)
+    mock = attr.ib(default=False, repr=False)
     _vdiff = attr.ib(default={})
+
 
     def __attrs_post_init__(self):
         """Load the API versions, if not provided"""
         if not self.api_name:
-            self.api_name = get_latest()
+            self.api_name = get_latest(mock=self.mock)
         if not self.ver1:
             # get the latest saved version
-            self.ver1 = get_latest(self.api_name)
+            self.ver1 = get_latest(api_name=self.api_name, mock=self.mock)
         if not self.ver2:
             # get the version before ver1
-            self.ver2 = get_previous(self.api_name, self.ver1)
+            self.ver2 = get_previous(self.api_name, self.ver1, self.mock)
 
     def _dict_diff(self, dict1, dict2):
         """Recursively search a dictionary for differences"""
@@ -109,10 +111,10 @@ class VersionDiff():
             return None
         logger.info('Performing diff between {} and {}'.format(self.ver1, self.ver2))
 
-        ver1_content = load_api(self.api_name, self.ver1)
-        logger.debug('Loaded {}'.format(self.ver1))
-        ver2_content = load_api(self.api_name, self.ver2)
-        logger.debug('Loaded {}'.format(self.ver2))
+        ver1_content = load_api(self.api_name, self.ver1, self.mock)
+        logger.debug('Loaded {}.'.format(self.ver1))
+        ver2_content = load_api(self.api_name, self.ver2, self.mock)
+        logger.debug('Loaded {}.'.format(self.ver2))
 
         added, changed = self._dict_diff(ver1_content, ver2_content)
         logger.debug('Determined added/changed content.')
@@ -130,9 +132,14 @@ class VersionDiff():
             logger.warning('No data to be saved. Exiting.')
             return
 
-        fpath = Path('APIs/{}/{}-to-{}-diff.yaml'.format(
-            self.api_name, self.ver2, self.ver1
-        ))
+        if self.mock:
+            fpath = Path('tests/APIs/{}/{}-to-{}-diff.yaml'.format(
+                self.api_name, self.ver2, self.ver1
+            ))
+        else:
+            fpath = Path('APIs/{}/{}-to-{}-diff.yaml'.format(
+                self.api_name, self.ver2, self.ver1
+            ))
         if fpath.exists():
             fpath.unlink()
         # create the directory, if it doesn't exist
@@ -141,3 +148,4 @@ class VersionDiff():
         logger.info('Saving results to {}'.format(fpath))
         with fpath.open('w+') as outfile:
             yaml.dump(self._vdiff, outfile, default_flow_style=False)
+        return fpath

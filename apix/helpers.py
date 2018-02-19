@@ -4,9 +4,9 @@ import yaml
 from pathlib import Path
 
 
-def get_api_list():
+def get_api_list(mock=False):
     """Return a list of saved apis, if they exist"""
-    api_dir = Path('APIs/')
+    api_dir = Path('APIs/' if not mock else 'tests/APIs/')
     # check exists
     if not api_dir.exists():
         return None
@@ -20,9 +20,12 @@ def get_api_list():
     return apis
 
 
-def get_ver_list(api_name):
+def get_ver_list(api_name, mock=False):
     """Return a list of saved api versions, if they exist"""
-    save_path = Path('APIs/{}'.format(api_name))
+    if mock:
+        save_path = Path('tests/APIs/{}'.format(api_name))
+    else:
+        save_path = Path('APIs/{}'.format(api_name))
     # check exists
     if not save_path.exists():
         return None
@@ -35,18 +38,18 @@ def get_ver_list(api_name):
     return sorted(versions, reverse=True)
 
 
-def get_latest(api_name=None):
+def get_latest(api_name=None, mock=False):
     """Get the latest api version, if it exists"""
     if not api_name:
-        return get_api_list()[0]
+        return get_api_list(mock=mock)[0]
     else:
-        ver_list = get_ver_list(api_name) or [None]
+        ver_list = get_ver_list(api_name, mock=mock) or [None]
         return ver_list[0]
 
 
-def get_previous(api_name, version):
+def get_previous(api_name, version, mock=False):
     """Get the api version before `version`, if it isn't last"""
-    api_list = get_ver_list(api_name)
+    api_list = get_ver_list(api_name, mock=mock)
     if version in api_list:
         v_pos = api_list.index(version)
         if v_pos + 2 <= len(api_list):
@@ -54,9 +57,13 @@ def get_previous(api_name, version):
     return None
 
 
-def load_api(api_name, version):
+def load_api(api_name, version, mock=False):
     """Load the saved yaml to dict, if the file exists"""
-    a_path = Path('APIs/{}/{}.yaml'.format(api_name, version))
+    if mock:
+        a_path = Path('tests/APIs/{}/{}.yaml'.format(api_name, version))
+    else:
+        a_path = Path('APIs/{}/{}.yaml'.format(api_name, version))
+
     if not a_path.exists():
         return None
     return yaml.load(a_path.open('r')) or None

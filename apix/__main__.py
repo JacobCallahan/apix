@@ -16,7 +16,9 @@ class Main(object):
         # self.conf = Config()
         parser = argparse.ArgumentParser()
         parser.add_argument(
-            "action", type=str, choices=['explore', 'diff', "makelib", 'list'],
+            "action", type=str, choices=[
+                'explore', 'diff', "makelib", 'list', 'test'
+            ],
             help="The action to perform.")
         args = parser.parse_args(sys.argv[1:2])
         if not hasattr(self, args.action):
