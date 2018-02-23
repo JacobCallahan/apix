@@ -22,7 +22,7 @@ class Main(object):
             help="The action to perform.")
         args = parser.parse_args(sys.argv[1:2])
         if not hasattr(self, args.action):
-            # logger.warning('Action {0} is not supported.'.format(args.action))
+            logger.warning(f'Action {args.action} is not supported.')
             parser.print_help()
             exit(1)
         getattr(self, args.action)()

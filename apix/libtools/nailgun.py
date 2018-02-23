@@ -143,16 +143,14 @@ class EntityMaker():
         if ' from ' in validator:
             # get the length arg length=(6, 12),
             split_v = validator.split(" ")
-            length = 'length=({}, {})'.format(
-                int(split_v[split_v.index('from') + 1]),
-                int(split_v[split_v.index('from') + 3])
-            )
+            length = (f"length=({ int(split_v[split_v.index('from') + 1]) }, "
+                      f"{ int(split_v[split_v.index('from') + 3]) })")
         else:
             length = None
 
         str_type = "str_type='alpha'" if 'alphanumeric' in validator else None
 
-        param_string = "'{}': ".format(self.normalize_param_name(name))
+        param_string = f"'{self.normalize_param_name(name)}': "
         if name[-3:] == '_id':
             arg_name = self.name_to_class(name[:-3])
         elif name[-4:] == '_ids':
@@ -164,19 +162,20 @@ class EntityMaker():
             arg_name = self.arg_override(class_name, arg_name)
             str_type, length = None, None
 
-        param_string += "entity_fields.{}".format('{}({})'.format(
-            self.get_field_type(param), ', '.join(
-                filter(None, [arg_name, required, str_type, length]))
-        ))
+        field_args = (
+            f'{self.get_field_type(param)}'
+            f"({', '.join(filter(None, [arg_name, required, str_type, length]))})"
+        )
+        param_string += f'entity_fields.{field_args}'
         return param_string
 
     def fill_method_template(self, proper_name, method_paths):
         """Load and fill out a method template for every method"""
-        logger.debug('Filling template for {}\'s methods.'.format(proper_name))
+        logger.debug(f'Filling template for {proper_name}\'s methods.')
         # load the template
         ent_temp_f = Path('libs/templates/nailgun/entity_method.template')
         if not ent_temp_f.exists():
-            logger.error('Unable to find {}.'.format(str(ent_temp_f.absolute())))
+            logger.error(f'Unable to find {ent_temp_f.absolute()}.')
             return
         loaded_template = None
         with ent_temp_f.open('r+') as f_load:
@@ -209,16 +208,16 @@ class EntityMaker():
             if method not in ['list', 'create', 'update', 'destroy']
         }
         methods_paths = '\n        '.join([
-            '{}\n            {}'.format(method, path[0].split()[1])
+            f'{method}\n            {path[0].split()[1]}'
             for method, path in method_paths.items()
         ])
         method_names = ',\n                '.join(
-            "'{}'".format(name) for name in method_paths.keys())
+            f"'{name}'" for name in method_paths.keys())
 
         # load the template
         ent_temp_f = Path('libs/templates/nailgun/entity_class.template')
         if not ent_temp_f.exists():
-            logger.error('Unable to find {}.'.format(str(ent_temp_f.absolute())))
+            logger.error(f'Unable to find {ent_temp_f.absolute()}.')
             return
         loaded_t = None
         with ent_temp_f.open('r+') as f_load:
@@ -245,7 +244,7 @@ class EntityMaker():
 
         entities_file = Path('libs/templates/nailgun/entities.py.template')
         if not entities_file.exists():
-            logger.error('Unable to find {}.'.format(str(entities_file)))
+            logger.error(f'Unable to find {entities_file}.')
             return
         loaded_ent_f = None
         with entities_file.open('r+') as ent_file:
@@ -253,15 +252,14 @@ class EntityMaker():
         loaded_ent_f = loaded_ent_f.replace(
             '~~generated entity classes~~', all_entity_templates)
 
-        save_file = Path('libs/generated/nailgun/{}/entities.py'.format(
-            self.api_version))
+        save_file = Path(f'libs/generated/nailgun/{self.api_version}/entities.py')
         if save_file.exists():
-            logger.warning('Overwriting {}'.format(str(save_file)))
+            logger.warning(f'Overwriting {save_file}')
             save_file.unlink()
         # create the directory, if it doesn't exist
         save_file.parent.mkdir(parents=True, exist_ok=True)
         save_file.touch()
-        logger.info('Saving results to {}'.format(save_file))
+        logger.info(f'Saving results to {save_file}')
         with save_file.open('w+') as outfile:
             outfile.write(loaded_ent_f)
 

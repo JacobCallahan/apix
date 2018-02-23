@@ -24,7 +24,7 @@ requirements = [
 
 setup(
     name='apix',
-    version='0.2.2',
+    version='0.2.3',
     description="API Explorer: Discover, Track, Test.",
     long_description=readme + '\n\n' + history,
     author="Jacob J Callahan",
