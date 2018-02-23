@@ -2,7 +2,8 @@
 apix (API Explorer) let's you quickly discover new APIs and versions.
 apix can also help you generate new versions of your API interaction libraries.
 
-**note:** apix currently only supports APIs that have an apidoc.
+**note:** apix currently only supports APIs that have an Apipie-based apidoc.
+You can extend this functionality by creating your own parser class.
 
 Installation
 ------------
@@ -24,7 +25,9 @@ If you don't specify a version, apix will save the results by date.
 
 ```apix explore --help```
 
-```apix explore -n satellite6 -u https://my.sathost.com/ -v 6.2.14```
+```apix explore -n satellite6 -u https://my.sathost.com/ -b apidoc/ -v 6.2.14 -p apipie```
+
+```apix explore -n satellite6 -u https://my.sathost.com/```
 
 Version Diff
 ------------

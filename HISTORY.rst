@@ -2,6 +2,12 @@
 History
 =======
 
+0.2.4(2018-02-23)
+=================
+
++ Added ability to write custom parsers for new api types
++ Separated base apipie parser logic into a new class
+
 0.2.3(2018-02-23)
 =================
 
