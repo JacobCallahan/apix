@@ -58,7 +58,7 @@ class AsyncExplorer():
     def _link_params(self):
         while self._queue:
             link, content = self._queue.pop(0)
-            logger.debug('Scraping {}'.format(link[1]))
+            logger.debug(f'Scraping {link[1]}')
             self._data[link[1]] = self.scrape_content(content)
 
     def _data_to_yaml(self, index):
@@ -92,16 +92,14 @@ class AsyncExplorer():
             logger.warning('No data to be saved. Exiting.')
             return
 
-        fpath = Path('APIs/{}/{}.yaml'.format(
-            self.name, self.version
-        ))
+        fpath = Path(f'APIs/{self.name}/{self.version}.yaml')
         if fpath.exists():
-            logger.warning('{} already exists. Deleting..'.format(str(fpath)))
+            logger.warning(f'{fpath} already exists. Deleting..')
             fpath.unlink()
         # create the directory, if it doesn't exist
         fpath.parent.mkdir(parents=True, exist_ok=True)
         fpath.touch()
-        logger.info('Saving results to {}'.format(fpath))
+        logger.info(f'Saving results to {fpath}')
         with fpath.open('w+') as outfile:
             yaml.dump(yaml_data, outfile, default_flow_style=False)
 
@@ -143,13 +141,13 @@ class AsyncExplorer():
             return
         result = requests.get(self.host_url + self.base_path, verify=False)
         if not result:
-            logger.warning("I couldn't find anything useful at {}.".format(
-                self.host_url + self.base_path))
+            logger.warning(f"I couldn't find anything useful at "
+                           f"{self.host_url}{self.base_path}.")
             return
         self.base_path = self.base_path.replace('.html', '')  # for next strep
-        logger.info('Starting to explore {}{}'.format(self.host_url, self.base_path))
+        logger.info(f'Starting to explore {self.host_url}{self.base_path}')
         links = self.pull_links(result)
-        logger.debug('Found {} links!'.format(len(links)))
+        logger.debug(f'Found {len(links)} links!')
         self._visit_links(links)
         # sort the results by link name, to normalize return order
         self._queue = sorted(self._queue, key=lambda x: x[0][1])

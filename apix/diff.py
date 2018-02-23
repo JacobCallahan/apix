@@ -48,10 +48,10 @@ class VersionDiff():
                         if chng:
                             changed[key] = chng
                     else:
-                        logger.debug('Adding {} => {}'.format(key, values))
+                        logger.debug(f'Adding {key} => {values}')
                         added[key] = values
             else:
-                logger.debug('Adding {} => {}'.format(key, values))
+                logger.debug(f'Adding {key} => {values}')
                 added[key] = values
         return added, changed
 
@@ -74,7 +74,7 @@ class VersionDiff():
                             if chng:
                                 changed.append(chng)
                 if not found:
-                    logger.debug('Adding {}'.format(item))
+                    logger.debug(f'Adding {item}')
                     added.append(item)
             elif isinstance(item, list):
                 res, chng = self._list_diff(item, list2[list2.index(item)])
@@ -90,14 +90,14 @@ class VersionDiff():
                     if name == needle.split('~')[0].strip():
                         found = True
                         if item != needle:
-                            logger.debug('{} changed to {}'.format(item, needle))
+                            logger.debug(f'{item} changed to {needle}')
                             changed.append(item)
                 if not found:
-                    logger.debug('Adding {}'.format(item))
+                    logger.debug(f'Adding {item}')
                     added.append(item)
             else:
                 if item not in list2:
-                    logger.debug('Adding {}'.format(item))
+                    logger.debug(f'Adding {item}')
                     added.append(item)
         return added, changed
 
@@ -109,21 +109,21 @@ class VersionDiff():
         if not self.ver2:
             logger.warning("No ver2 API found.")
             return None
-        logger.info('Performing diff between {} and {}'.format(self.ver1, self.ver2))
+        logger.info(f'Performing diff between {self.ver1} and {self.ver2}')
 
         ver1_content = load_api(self.api_name, self.ver1, self.mock)
-        logger.debug('Loaded {}.'.format(self.ver1))
+        logger.debug(f'Loaded {self.ver1}.')
         ver2_content = load_api(self.api_name, self.ver2, self.mock)
-        logger.debug('Loaded {}.'.format(self.ver2))
+        logger.debug(f'Loaded {self.ver2}.')
 
         added, changed = self._dict_diff(ver1_content, ver2_content)
         logger.debug('Determined added/changed content.')
         removed, _ = self._dict_diff(ver2_content, ver1_content)
         logger.debug('Determined removed content.')
         self._vdiff = {
-            'Added in {} since {}'.format(self.ver1, self.ver2): added,
-            'Changed in {} since {}'.format(self.ver1, self.ver2): changed,
-            'Removed since {}'.format(self.ver2): removed
+            f'Added in {self.ver1} since {self.ver2}': added,
+            f'Changed in {self.ver1} since {self.ver2}': changed,
+            f'Removed since {self.ver2}': removed
         }
 
     def save_diff(self):
@@ -133,19 +133,17 @@ class VersionDiff():
             return
 
         if self.mock:
-            fpath = Path('tests/APIs/{}/{}-to-{}-diff.yaml'.format(
-                self.api_name, self.ver2, self.ver1
-            ))
+            fpath = Path(
+                f'tests/APIs/{self.api_name}/{self.ver2}-to-{self.ver1}-diff.yaml')
         else:
-            fpath = Path('APIs/{}/{}-to-{}-diff.yaml'.format(
-                self.api_name, self.ver2, self.ver1
-            ))
+            fpath = Path(
+                f'APIs/{self.api_name}/{self.ver2}-to-{self.ver1}-diff.yaml')
         if fpath.exists():
             fpath.unlink()
         # create the directory, if it doesn't exist
         fpath.parent.mkdir(parents=True, exist_ok=True)
         fpath.touch()
-        logger.info('Saving results to {}'.format(fpath))
+        logger.info(f'Saving results to {fpath}')
         with fpath.open('w+') as outfile:
             yaml.dump(self._vdiff, outfile, default_flow_style=False)
         return fpath

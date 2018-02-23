@@ -23,9 +23,9 @@ def get_api_list(mock=False):
 def get_ver_list(api_name, mock=False):
     """Return a list of saved api versions, if they exist"""
     if mock:
-        save_path = Path('tests/APIs/{}'.format(api_name))
+        save_path = Path(f'tests/APIs/{api_name}')
     else:
-        save_path = Path('APIs/{}'.format(api_name))
+        save_path = Path(f'APIs/{api_name}')
     # check exists
     if not save_path.exists():
         return None
@@ -60,9 +60,9 @@ def get_previous(api_name, version, mock=False):
 def load_api(api_name, version, mock=False):
     """Load the saved yaml to dict, if the file exists"""
     if mock:
-        a_path = Path('tests/APIs/{}/{}.yaml'.format(api_name, version))
+        a_path = Path(f'tests/APIs/{api_name}/{version}.yaml')
     else:
-        a_path = Path('APIs/{}/{}.yaml'.format(api_name, version))
+        a_path = Path(f'APIs/{api_name}/{version}.yaml')
 
     if not a_path.exists():
         return None

@@ -26,9 +26,10 @@ class LibMaker():
 
     def make_lib(self):
         if self.api_name.lower() == 'satellite6':
-            logger.info('Making a nailgun library for {} at {}'.format(
-                self.api_version, 'libs/generated/nailgun/'
-            ))
+            logger.info(
+                f'Making a nailgun library for {self.api_version}'
+                ' at libs/generated/nailgun/'
+            )
             api_dict = helpers.load_api(self.api_name, self.api_version)
             nailgun_maker = nailgun.NailgunMaker(
                 api_dict = api_dict,
@@ -37,6 +38,5 @@ class LibMaker():
             )
             nailgun_maker.make()
         else:
-            logger.warning("I don't know how to make a library for {}".format(
-                self.api_name
-            ))
+            logger.warning(
+                f"I don't know how to make a library for {self.api_name}")
