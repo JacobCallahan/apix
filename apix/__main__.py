@@ -43,6 +43,9 @@ class Main(object):
             "-v", "--version", type=str, default=None,
             help="The API version we're exploring (6.3).")
         parser.add_argument(
+            "-p", "--parser", type=str, default='apipie',
+            help="The name of the parser to use when pulling data (apipie).")
+        parser.add_argument(
             "--debug", action="store_true",
             help="Enable debug loggin level.")
 
@@ -53,7 +56,8 @@ class Main(object):
             name=args.api_name,
             version=args.version,
             host_url=args.host_url,
-            base_path=args.base_path
+            base_path=args.base_path,
+            parser=args.parser
         )
         explorer.explore()
         explorer.save_data()

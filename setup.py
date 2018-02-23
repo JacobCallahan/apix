@@ -24,13 +24,13 @@ requirements = [
 
 setup(
     name='apix',
-    version='0.2.3',
+    version='0.2.4',
     description="API Explorer: Discover, Track, Test.",
     long_description=readme + '\n\n' + history,
     author="Jacob J Callahan",
     author_email='jacob.callahan05@@gmail.com',
     url='https://github.com/JacobCallahan/apix',
-    packages=['apix', 'apix.libtools'],
+    packages=['apix', 'apix.libtools', 'apix.parsers'],
     entry_points={
         'console_scripts': [
             'apix=apix.__main__:Main'

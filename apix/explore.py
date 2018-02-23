@@ -8,9 +8,10 @@ import attr
 import requests
 import time
 import yaml
-from lxml import html
 from logzero import logger
 from pathlib import Path
+from apix.parsers import apipie
+
 
 
 @attr.s()
@@ -19,12 +20,18 @@ class AsyncExplorer():
     version = attr.ib(default=None)
     host_url = attr.ib(default=None)
     base_path = attr.ib(default=None)
-    _queue = attr.ib(default=[], repr=False)
+    parser = attr.ib(default=None)
     _data = attr.ib(default={}, repr=False)
+    _queue = attr.ib(default=[], repr=False)
 
     def __attrs_post_init__(self):
         if not self.version:
             self.version = time.strftime('%Y-%m-%d', time.localtime())
+        # choose the correct parser class from known parsers
+        if self.parser.lower() == 'apipie':
+            self.parser = apipie.APIPie()
+        if not self.parser or isinstance(self.parser, str):
+            logger.warning('No known parser specified! Please review documentation.')
 
     async def _async_get(self, session, link):
         async with session.get(self.host_url + link[1], verify_ssl=False) as response:
@@ -59,35 +66,10 @@ class AsyncExplorer():
         while self._queue:
             link, content = self._queue.pop(0)
             logger.debug(f'Scraping {link[1]}')
-            self._data[link[1]] = self.scrape_content(content)
-
-    def _data_to_yaml(self, index):
-        result = {}
-        # apidoc/v2/<entity>/<action>.html
-        url = index
-        split_url = url.split('/')
-        action = split_url[-1].replace('.html', '')
-        action = 'list' if action == 'index' else action
-        try:
-            entity = split_url[-2]
-        except Exception as err:
-            logger.error(err)
-            return False, False
-
-        paths = self._data[index]['paths']
-        if '/' not in paths[0]:
-            return False, False
-        params = self._data[index]['params']
-        return entity, {action: {'paths': paths, 'parameters': params}}
+            self._data[link[1]] = self.parser.scrape_content(content)
 
     def save_data(self):
-        yaml_data = {}
-        for index in self._data:
-            ent, res = self._data_to_yaml(index)
-            if ent and not yaml_data.get(ent, None):
-                yaml_data[ent] = {'methods': [res]}
-            elif ent:
-                yaml_data[ent]['methods'].append(res)
+        yaml_data = self.parser.yaml_format(self._data)
         if not yaml_data:
             logger.warning('No data to be saved. Exiting.')
             return
@@ -103,38 +85,6 @@ class AsyncExplorer():
         with fpath.open('w+') as outfile:
             yaml.dump(yaml_data, outfile, default_flow_style=False)
 
-    def pull_links(self, result):
-        g_links = html.fromstring(result.content).iterlinks()
-        links, last = [], None
-        for link in g_links:
-            url = link[2].replace('../', '')
-            if ('/' in url[len(self.base_path):] and link[0].text
-                and url != last):
-                links.append((link[0].text, url))
-                last = url
-        return links
-
-    def scrape_content(self, content):
-        tree = html.fromstring(content)
-        paths = tree.xpath("//h1")
-        path_list = []
-        for path in paths:
-            path_list.append(path.text.replace("\n      ",""))
-        params = tree.xpath("//table/tbody/tr")
-        param_list = []
-        for param in params:
-            temp_list = [
-                x for x
-                in param.text_content().replace("  ","").split('\n')
-                if x
-            ]
-            param_list.append(temp_list[:2])
-            # If there is a validation, include it in the results
-            if 'Validations:' in temp_list:
-                param_list[-1].append(temp_list[temp_list.index('Validations:') + 1])
-            param_list[-1] = " ~ ".join(param_list[-1])
-        return {'paths': path_list, 'params': param_list}
-
     def explore(self):
         if 'apidoc/' not in self.base_path:
             logger.warning('I don\'t know how to explore that yet.')
@@ -146,7 +96,7 @@ class AsyncExplorer():
             return
         self.base_path = self.base_path.replace('.html', '')  # for next strep
         logger.info(f'Starting to explore {self.host_url}{self.base_path}')
-        links = self.pull_links(result)
+        links = self.parser.pull_links(result, self.base_path)
         logger.debug(f'Found {len(links)} links!')
         self._visit_links(links)
         # sort the results by link name, to normalize return order
