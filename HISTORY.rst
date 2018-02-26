@@ -2,6 +2,14 @@
 History
 =======
 
+0.2.5(2018-02-26)
+=================
+
++ Added a test for explore module
++ Added test parser for above test
++ Added a bit of feedback to explore's explore and save_data
++ Added more in-code documentation
+
 0.2.4(2018-02-23)
 =================
 
