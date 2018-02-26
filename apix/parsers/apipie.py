@@ -18,6 +18,7 @@ class APIPie():
     _data = attr.ib(default={}, repr=False)
 
     def _data_to_yaml(self, index):
+        """translate a url and content into paths and parameters"""
         # apidoc/v2/<entity>/<action>.html
         url = index
         split_url = url.split('/')
@@ -36,6 +37,7 @@ class APIPie():
         return entity, {action: {'paths': paths, 'parameters': params}}
 
     def yaml_format(self, data):
+        """compile all data into a yaml-compatible dict"""
         self._data, yaml_data = data, {}
         for index in self._data:
             ent, res = self._data_to_yaml(index)
@@ -47,6 +49,7 @@ class APIPie():
 
     @staticmethod
     def pull_links(result, base_path):
+        """return all desired links from the target page"""
         g_links = html.fromstring(result.content).iterlinks()
         links, last = [], None
         for link in g_links:
@@ -59,6 +62,7 @@ class APIPie():
 
     @staticmethod
     def scrape_content(content):
+        """pull the paths and parameters from the h1 and tables on the page"""
         tree = html.fromstring(content)
         paths = tree.xpath("//h1")
         path_list = []
