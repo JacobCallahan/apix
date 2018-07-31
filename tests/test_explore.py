@@ -10,7 +10,7 @@ def test_positive_explore():
         version='1.0',
         host_url='https://github.com/',
         base_path='JacobCallahan?tab=repositories',
-        parser='test'
+        parser='test',
     )
     assert t_explorer.explore()
     save_file = t_explorer.save_data()

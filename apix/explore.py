@@ -13,9 +13,8 @@ from pathlib import Path
 from apix.parsers import apipie, test
 
 
-
 @attr.s()
-class AsyncExplorer():
+class AsyncExplorer:
     name = attr.ib(default=None)
     version = attr.ib(default=None)
     host_url = attr.ib(default=None)
@@ -48,8 +47,7 @@ class AsyncExplorer():
         tasks = []
         async with aiohttp.ClientSession() as session:
             for link in links:
-                task = asyncio.ensure_future(
-                    self._async_get(session, link))
+                task = asyncio.ensure_future(self._async_get(session, link))
                 tasks.append(task)
             results = await asyncio.gather(*tasks)
             for result in results:
@@ -61,9 +59,11 @@ class AsyncExplorer():
             loop = asyncio.get_event_loop()
             loop.run_until_complete(self._async_loop(links))
         except aiohttp.client_exceptions.ServerDisconnectedError as err:
-            logger.warning('Lost connection to host.{}'.join(
-                'Retrying in 10 seconds' if retries else ''
-            ))
+            logger.warning(
+                'Lost connection to host.{}'.join(
+                    'Retrying in 10 seconds' if retries else ''
+                )
+            )
             if retries:
                 time.sleep(10)
                 self._visit_links(links, retries - 1)
@@ -103,8 +103,10 @@ class AsyncExplorer():
         """
         result = requests.get(self.host_url + self.base_path, verify=False)
         if not result:
-            logger.warning(f"I couldn't find anything useful at "
-                           f"{self.host_url}{self.base_path}.")
+            logger.warning(
+                f"I couldn't find anything useful at "
+                f"{self.host_url}{self.base_path}."
+            )
             return
         self.base_path = self.base_path.replace('.html', '')  # for next strep
         logger.info(f'Starting to explore {self.host_url}{self.base_path}')

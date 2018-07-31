@@ -55,19 +55,19 @@ def test_positive_get_field_type():
         'param ~ optional ~ thing of numbers': 'IntegerField',
         'param ~ optional ~ integer': 'IntegerField',
         'param ~ optional ~ String thing': 'StringField',
-        'param ~ optional ~ nothing': 'StringField'
+        'param ~ optional ~ nothing': 'StringField',
     }
     for param, expected in params.items():
         assert nailgun.EntityMaker.get_field_type(param) == expected
 
 
 def test_positive_arg_override():
-    assert nailgun.EntityMaker.arg_override(
-        'Location', 'Environment') == 'Environment'
-    assert nailgun.EntityMaker.arg_override(
-        'ActivationKey', 'Environment') == 'LifecycleEnvironment'
-    assert nailgun.EntityMaker.arg_override(
-        'Something', 'Else') == 'Else'
+    assert nailgun.EntityMaker.arg_override('Location', 'Environment') == 'Environment'
+    assert (
+        nailgun.EntityMaker.arg_override('ActivationKey', 'Environment')
+        == 'LifecycleEnvironment'
+    )
+    assert nailgun.EntityMaker.arg_override('Something', 'Else') == 'Else'
 
 
 def test_positive_get_method_paths():
@@ -89,7 +89,9 @@ def test_positive_entity_to_field():
     emaker = nailgun.EntityMaker(api_dict, 'test123', '2.1')
     field = emaker.param_to_field(
         class_name='entity_one',
-        param='param1  ~ required ~ string from 2 to 128 characters alphanumeric'
+        param='param1  ~ required ~ string from 2 to 128 characters alphanumeric',
     )
-    assert field == ("'param1': entity_fields.StringField(" +
-                    "required=True, str_type='alpha', length=(2, 128))")
+    assert field == (
+        "'param1': entity_fields.StringField("
+        + "required=True, str_type='alpha', length=(2, 128))"
+    )

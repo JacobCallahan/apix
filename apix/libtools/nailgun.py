@@ -6,7 +6,7 @@ from logzero import logger
 
 
 @attr.s()
-class EntityMaker():
+class EntityMaker:
     api_dict = attr.ib(repr=False)
     api_name = attr.ib()
     api_version = attr.ib()
@@ -32,7 +32,7 @@ class EntityMaker():
             param_name = param_name[:-4]
         elif param_name[-3:] == '_id':
             param_name = param_name[:-3]
-        #strip the []'s, use the last one as the new name
+        # strip the []'s, use the last one as the new name
         if '[' in param_name and ']' in param_name:
             param_name = param_name.split('[')[-1].replace(']', '')
         return param_name
@@ -48,12 +48,18 @@ class EntityMaker():
                         clean_name = value.split('~')[0].strip()
                         if clean_name == 'id':
                             continue  # we don't want to use the id field here
-                        if '_ids' in clean_name and clean_name.replace('_ids', '') in names:
+                        if (
+                            '_ids' in clean_name
+                            and clean_name.replace('_ids', '') in names
+                        ):
                             # The name_id should take the final slot
                             index = names.index(clean_name.replace('_ids', ''))
                             names[index] = clean_name
                             param_list[index] = value
-                        elif '_id' in clean_name and clean_name.replace('_id', '') in names:
+                        elif (
+                            '_id' in clean_name
+                            and clean_name.replace('_id', '') in names
+                        ):
                             # The name_id should take the final slot
                             index = names.index(clean_name.replace('_id', ''))
                             names[index] = clean_name
@@ -63,7 +69,9 @@ class EntityMaker():
                             index = names.index(clean_name)
                             names[index] = clean_name
                             param_list[index] = value
-                        elif clean_name not in names and clean_name + '_id' not in names:
+                        elif (
+                            clean_name not in names and clean_name + '_id' not in names
+                        ):
                             names.append(clean_name)
                             param_list.append(value)
         return sorted(param_list)
@@ -84,8 +92,12 @@ class EntityMaker():
         if '_date' in params:
             return 'DateField'
         if '[ip]' in name or name in [
-                'subnet[mac]', 'subnet[network]', 'subnet[to]', 'subnet[from]',
-                'subnet[dns_primary]', 'subnet[dns_secondary]'
+            'subnet[mac]',
+            'subnet[network]',
+            'subnet[to]',
+            'subnet[from]',
+            'subnet[dns_primary]',
+            'subnet[dns_secondary]',
         ]:
             return 'IPAddressField'
         if '[mask]' in name:
@@ -143,8 +155,10 @@ class EntityMaker():
         if ' from ' in validator:
             # get the length arg length=(6, 12),
             split_v = validator.split(" ")
-            length = (f"length=({ int(split_v[split_v.index('from') + 1]) }, "
-                      f"{ int(split_v[split_v.index('from') + 3]) })")
+            length = (
+                f"length=({ int(split_v[split_v.index('from') + 1]) }, "
+                f"{ int(split_v[split_v.index('from') + 3]) })"
+            )
         else:
             length = None
 
@@ -200,19 +214,23 @@ class EntityMaker():
         class_name = self.name_to_class(entity)
         field_list = self.get_base_params(self.api_dict[entity])
         field_list = ',\n            '.join(
-            [self.param_to_field(class_name, param) for param in field_list])
+            [self.param_to_field(class_name, param) for param in field_list]
+        )
         base_path = self.get_base_path(entity)
         method_paths = {
             method: path
             for method, path in self.get_method_paths(entity).items()
             if method not in ['list', 'create', 'update', 'destroy']
         }
-        methods_paths = '\n        '.join([
-            f'{method}\n            {path[0].split()[1]}'
-            for method, path in method_paths.items()
-        ])
+        methods_paths = '\n        '.join(
+            [
+                f'{method}\n            {path[0].split()[1]}'
+                for method, path in method_paths.items()
+            ]
+        )
         method_names = ',\n                '.join(
-            f"'{name}'" for name in method_paths.keys())
+            f"'{name}'" for name in method_paths.keys()
+        )
 
         # load the template
         ent_temp_f = Path('libs/templates/nailgun/entity_class.template')
@@ -230,17 +248,17 @@ class EntityMaker():
         loaded_t = loaded_t.replace('~~base path~~', base_path)
         loaded_t = loaded_t.replace('~~methods paths~~', methods_paths)
         loaded_t = loaded_t.replace('~~method names~~', method_names)
-        loaded_t = loaded_t.replace('~~entity methods~~',
-            self.fill_method_template(proper_name, method_paths))
+        loaded_t = loaded_t.replace(
+            '~~entity methods~~', self.fill_method_template(proper_name, method_paths)
+        )
         return loaded_t
 
     def create_entities_file(self):
         """Populate an entities.py with filled entity templates"""
         logger.debug('Creating entities.py file.')
-        all_entity_templates = '\n'.join([
-            self.fill_entity_template(entity)
-            for entity in self.api_dict
-        ])
+        all_entity_templates = '\n'.join(
+            [self.fill_entity_template(entity) for entity in self.api_dict]
+        )
 
         entities_file = Path('libs/templates/nailgun/entities.py.template')
         if not entities_file.exists():
@@ -250,7 +268,8 @@ class EntityMaker():
         with entities_file.open('r+') as ent_file:
             loaded_ent_f = ent_file.read()
         loaded_ent_f = loaded_ent_f.replace(
-            '~~generated entity classes~~', all_entity_templates)
+            '~~generated entity classes~~', all_entity_templates
+        )
 
         save_file = Path(f'libs/generated/nailgun/{self.api_version}/entities.py')
         if save_file.exists():
@@ -265,7 +284,7 @@ class EntityMaker():
 
 
 @attr.s()
-class NailgunMaker():
+class NailgunMaker:
     api_dict = attr.ib(repr=False)
     api_name = attr.ib()
     api_version = attr.ib()

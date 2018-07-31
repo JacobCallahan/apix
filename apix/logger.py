@@ -11,7 +11,8 @@ def setup_logzero(level='info', path='logs/apix.log'):
         level = logging.DEBUG
         log_fmt = (
             '%(color)s[%(levelname)1.1s %(asctime)s %(module)s:%(lineno)d]'
-            '%(end_color)s %(message)s')
+            '%(end_color)s %(message)s'
+        )
     elif level == 'info':
         level = logging.INFO
     elif level == 'warning':
@@ -25,7 +26,8 @@ def setup_logzero(level='info', path='logs/apix.log'):
     logzero.setup_default_logger(formatter=formatter)
     logzero.loglevel(level)
     logzero.logfile(
-        path, loglevel=level, maxBytes=1e9, backupCount=3, formatter=formatter)
+        path, loglevel=level, maxBytes=1e9, backupCount=3, formatter=formatter
+    )
 
 
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)

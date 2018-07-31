@@ -19,7 +19,7 @@ requirements = [
     'lxml',
     'pyyaml',
     'pytest',
-    'requests'
+    'requests',
 ]
 
 setup(
@@ -31,11 +31,7 @@ setup(
     author_email='jacob.callahan05@@gmail.com',
     url='https://github.com/JacobCallahan/apix',
     packages=['apix', 'apix.libtools', 'apix.parsers'],
-    entry_points={
-        'console_scripts': [
-            'apix=apix.__main__:Main'
-        ]
-    },
+    entry_points={'console_scripts': ['apix=apix.__main__:Main']},
     include_package_data=True,
     install_requires=requirements,
     license="GNU General Public License v3",
@@ -48,5 +44,5 @@ setup(
         'Natural Language :: English',
         'Programming Language :: Python :: 3',
         'Programming Language :: Python :: 3.6',
-    ]
+    ],
 )
