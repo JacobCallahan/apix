@@ -8,7 +8,7 @@ from apix.libtools import nailgun
 
 
 @attr.s()
-class LibMaker():
+class LibMaker:
     api_name = attr.ib(default=None)
     api_version = attr.ib(default=None)
 
@@ -32,11 +32,8 @@ class LibMaker():
             )
             api_dict = helpers.load_api(self.api_name, self.api_version)
             nailgun_maker = nailgun.NailgunMaker(
-                api_dict = api_dict,
-                api_name = self.api_name,
-                api_version = self.api_version
+                api_dict=api_dict, api_name=self.api_name, api_version=self.api_version
             )
             nailgun_maker.make()
         else:
-            logger.warning(
-                f"I don't know how to make a library for {self.api_name}")
+            logger.warning(f"I don't know how to make a library for {self.api_name}")

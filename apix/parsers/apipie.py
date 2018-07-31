@@ -13,8 +13,9 @@ from lxml import html
 
 
 @attr.s()
-class APIPie():
+class APIPie:
     """Parser class for Ruby's APIPie apidoc generator"""
+
     _data = attr.ib(default={}, repr=False)
 
     def _data_to_yaml(self, index):
@@ -54,8 +55,7 @@ class APIPie():
         links, last = [], None
         for link in g_links:
             url = link[2].replace('../', '')
-            if ('/' in url[len(base_path):] and link[0].text
-                and url != last):
+            if '/' in url[len(base_path) :] and link[0].text and url != last:
                 links.append((link[0].text, url))
                 last = url
         return links
@@ -67,14 +67,12 @@ class APIPie():
         paths = tree.xpath("//h1")
         path_list = []
         for path in paths:
-            path_list.append(path.text.replace("\n      ",""))
+            path_list.append(path.text.replace("\n      ", ""))
         params = tree.xpath("//table/tbody/tr")
         param_list = []
         for param in params:
             temp_list = [
-                x for x
-                in param.text_content().replace("  ","").split('\n')
-                if x
+                x for x in param.text_content().replace("  ", "").split('\n') if x
             ]
             param_list.append(temp_list[:2])
             # If there is a validation, include it in the results

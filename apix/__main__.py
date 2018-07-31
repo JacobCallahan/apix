@@ -12,14 +12,16 @@ from apix import logger
 
 class Main(object):
     """This main class will allow for better nested arguments (git stlye)"""
+
     def __init__(self):
         # self.conf = Config()
         parser = argparse.ArgumentParser()
         parser.add_argument(
-            "action", type=str, choices=[
-                'explore', 'diff', "makelib", 'list', 'test'
-            ],
-            help="The action to perform.")
+            "action",
+            type=str,
+            choices=['explore', 'diff', "makelib", 'list', 'test'],
+            help="The action to perform.",
+        )
         args = parser.parse_args(sys.argv[1:2])
         if not hasattr(self, args.action):
             logger.warning(f'Action {args.action} is not supported.')
@@ -31,23 +33,43 @@ class Main(object):
         """Explore a target API and export the findings"""
         parser = argparse.ArgumentParser()
         parser.add_argument(
-            "-n", "--api-name", type=str, required=True,
-            help="The name of the API (satellite6).")
+            "-n",
+            "--api-name",
+            type=str,
+            required=True,
+            help="The name of the API (satellite6).",
+        )
         parser.add_argument(
-            "-u", "--host-url", type=str, required=True,
-            help="The url for the API's host (http://my.host.domain/).")
+            "-u",
+            "--host-url",
+            type=str,
+            required=True,
+            help="The url for the API's host (http://my.host.domain/).",
+        )
         parser.add_argument(
-            "-b", "--base-path", type=str, default='apidoc/',
-            help="The apidoc location relative to the host's url (apidoc/).")
+            "-b",
+            "--base-path",
+            type=str,
+            default='apidoc/',
+            help="The apidoc location relative to the host's url (apidoc/).",
+        )
         parser.add_argument(
-            "-v", "--version", type=str, default=None,
-            help="The API version we're exploring (6.3).")
+            "-v",
+            "--version",
+            type=str,
+            default=None,
+            help="The API version we're exploring (6.3).",
+        )
         parser.add_argument(
-            "-p", "--parser", type=str, default='apipie',
-            help="The name of the parser to use when pulling data (apipie).")
+            "-p",
+            "--parser",
+            type=str,
+            default='apipie',
+            help="The name of the parser to use when pulling data (apipie).",
+        )
         parser.add_argument(
-            "--debug", action="store_true",
-            help="Enable debug loggin level.")
+            "--debug", action="store_true", help="Enable debug loggin level."
+        )
 
         args = parser.parse_args(sys.argv[2:])
         if args.debug:
@@ -57,7 +79,7 @@ class Main(object):
             version=args.version,
             host_url=args.host_url,
             base_path=args.base_path,
-            parser=args.parser
+            parser=args.parser,
         )
         explorer.explore()
         explorer.save_data()
@@ -66,25 +88,35 @@ class Main(object):
         """Determine the changes between two API versions"""
         parser = argparse.ArgumentParser()
         parser.add_argument(
-            "-n", "--api-name", type=str, default=None,
-            help="The name of the API (satellite6).")
+            "-n",
+            "--api-name",
+            type=str,
+            default=None,
+            help="The name of the API (satellite6).",
+        )
         parser.add_argument(
-            "-l", "--latest-version", type=str, default=None,
-            help="The latest version of the API")
+            "-l",
+            "--latest-version",
+            type=str,
+            default=None,
+            help="The latest version of the API",
+        )
         parser.add_argument(
-            "-p", "--previous-version", type=str, default=None,
-            help="A previous version of the API")
+            "-p",
+            "--previous-version",
+            type=str,
+            default=None,
+            help="A previous version of the API",
+        )
         parser.add_argument(
-            "--debug", action="store_true",
-            help="Enable debug loggin level.")
+            "--debug", action="store_true", help="Enable debug loggin level."
+        )
 
         args = parser.parse_args(sys.argv[2:])
         if args.debug:
             logger.setup_logzero(level='debug')
         vdiff = VersionDiff(
-            api_name=args.api_name,
-            ver1=args.latest_version,
-            ver2=args.previous_version,
+            api_name=args.api_name, ver1=args.latest_version, ver2=args.previous_version
         )
         vdiff.diff()
         vdiff.save_diff()
@@ -93,33 +125,40 @@ class Main(object):
         """Create a library to interact with a specific API version"""
         parser = argparse.ArgumentParser()
         parser.add_argument(
-            "-n", "--api-name", type=str, default=None,
-            help="The name of the API (satellite6).")
+            "-n",
+            "--api-name",
+            type=str,
+            default=None,
+            help="The name of the API (satellite6).",
+        )
         parser.add_argument(
-            "-v", "--version", type=str, default=None,
-            help="The API version we're creating a library for (6.3).")
+            "-v",
+            "--version",
+            type=str,
+            default=None,
+            help="The API version we're creating a library for (6.3).",
+        )
         parser.add_argument(
-            "--debug", action="store_true",
-            help="Enable debug loggin level.")
+            "--debug", action="store_true", help="Enable debug loggin level."
+        )
 
         args = parser.parse_args(sys.argv[2:])
         if args.debug:
             logger.setup_logzero(level='debug')
-        libmaker = LibMaker(
-            api_name=args.api_name,
-            api_version=args.version
-        )
+        libmaker = LibMaker(api_name=args.api_name, api_version=args.version)
         libmaker.make_lib()
 
     def list(self):
         """List out the API information we have stored"""
         parser = argparse.ArgumentParser()
+        parser.add_argument("subject", type=str, choices=['apis', 'versions'])
         parser.add_argument(
-            "subject", type=str,
-            choices=['apis', 'versions'])
-        parser.add_argument(
-            "-n", "--api-name", type=str, default=None,
-            help="The name of the api you want to list versions of.")
+            "-n",
+            "--api-name",
+            type=str,
+            default=None,
+            help="The name of the api you want to list versions of.",
+        )
 
         args = parser.parse_args(sys.argv[2:])
 
@@ -132,17 +171,21 @@ class Main(object):
         """List out some information about our entities and inputs."""
         parser = argparse.ArgumentParser()
         parser.add_argument(
-            "--args", type=str, nargs='+',
-            help='pytest args to pass in. (--args="-r a")')
+            "--args",
+            type=str,
+            nargs='+',
+            help='pytest args to pass in. (--args="-r a")',
+        )
         args = parser.parse_args(sys.argv[2:])
         if args.args:
             pyargs = args.args
         else:
-            pyargs=['-q']
+            pyargs = ['-q']
         pytest.cmdline.main(args=pyargs)
 
     def __repr__(self):
         return None
+
 
 if __name__ == '__main__':
     Main()

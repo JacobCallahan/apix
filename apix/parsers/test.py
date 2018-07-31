@@ -15,8 +15,9 @@ from lxml import html
 
 
 @attr.s()
-class TestParser():
+class TestParser:
     """Parser class for testing purposes only."""
+
     _data = attr.ib(default={}, repr=False)
 
     def _data_to_yaml(self, index):

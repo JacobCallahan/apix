@@ -12,9 +12,7 @@ def get_api_list(mock=False):
         return None
     # get all versions in directory, that aren't diffs
     apis = [
-        (api.name, api.stat().st_mtime)
-        for api in api_dir.iterdir()
-        if api.is_dir()
+        (api.name, api.stat().st_mtime) for api in api_dir.iterdir() if api.is_dir()
     ] or []
     apis = [api for api, _ in sorted(apis, key=lambda x: x[1], reverse=True)]
     return apis

@@ -8,13 +8,12 @@ from apix.helpers import get_latest, get_previous, load_api
 
 
 @attr.s()
-class VersionDiff():
+class VersionDiff:
     api_name = attr.ib(default=None)
     ver1 = attr.ib(default=None)
     ver2 = attr.ib(default=None)
     mock = attr.ib(default=False, repr=False)
     _vdiff = attr.ib(default={})
-
 
     def __attrs_post_init__(self):
         """Load the API versions, if not provided"""
@@ -54,7 +53,6 @@ class VersionDiff():
                 logger.debug(f'Adding {key} => {values}')
                 added[key] = values
         return added, changed
-
 
     def _list_diff(self, list1, list2):
         """Recursively search a list for differences"""
@@ -123,7 +121,7 @@ class VersionDiff():
         self._vdiff = {
             f'Added in {self.ver1} since {self.ver2}': added,
             f'Changed in {self.ver1} since {self.ver2}': changed,
-            f'Removed since {self.ver2}': removed
+            f'Removed since {self.ver2}': removed,
         }
 
     def save_diff(self):
@@ -134,10 +132,10 @@ class VersionDiff():
 
         if self.mock:
             fpath = Path(
-                f'tests/APIs/{self.api_name}/{self.ver2}-to-{self.ver1}-diff.yaml')
+                f'tests/APIs/{self.api_name}/{self.ver2}-to-{self.ver1}-diff.yaml'
+            )
         else:
-            fpath = Path(
-                f'APIs/{self.api_name}/{self.ver2}-to-{self.ver1}-diff.yaml')
+            fpath = Path(f'APIs/{self.api_name}/{self.ver2}-to-{self.ver1}-diff.yaml')
         if fpath.exists():
             fpath.unlink()
         # create the directory, if it doesn't exist
