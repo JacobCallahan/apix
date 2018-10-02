@@ -37,7 +37,7 @@ class AsyncExplorer:
 
     async def _async_get(self, session, link):
         """visit a page and download the content, returning the link and content"""
-        async with session.get(self.host_url + link[1], verify_ssl=False) as response:
+        async with session.get(self.host_url + link[1], ssl=False) as response:
             content = await response.read()
             logger.debug(link[1])
             return (link, content)
