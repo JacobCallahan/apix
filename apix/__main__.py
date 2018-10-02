@@ -109,6 +109,11 @@ class Main(object):
             help="A previous version of the API",
         )
         parser.add_argument(
+            "--compact",
+            action="store_true",
+            help="Strip all the extra information from the diff.",
+        )
+        parser.add_argument(
             "--debug", action="store_true", help="Enable debug loggin level."
         )
 
@@ -116,7 +121,7 @@ class Main(object):
         if args.debug:
             logger.setup_logzero(level='debug')
         vdiff = VersionDiff(
-            api_name=args.api_name, ver1=args.latest_version, ver2=args.previous_version
+            api_name=args.api_name, ver1=args.latest_version, ver2=args.previous_version, compact=args.compact
         )
         vdiff.diff()
         vdiff.save_diff()

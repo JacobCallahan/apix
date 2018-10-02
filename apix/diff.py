@@ -12,6 +12,7 @@ class VersionDiff:
     api_name = attr.ib(default=None)
     ver1 = attr.ib(default=None)
     ver2 = attr.ib(default=None)
+    compact = attr.ib(default=False)
     mock = attr.ib(default=False, repr=False)
     _vdiff = attr.ib(default={})
 
@@ -25,6 +26,15 @@ class VersionDiff:
         if not self.ver2:
             # get the version before ver1
             self.ver2 = get_previous(self.api_name, self.ver1, self.mock)
+
+    def _truncate(self, diff_dict):
+        """Strip all extra information from a diff"""
+        compact_diff = {}
+        for parent, children in diff_dict.items():
+            compact_diff[parent] = []
+            for meth in children['methods']:
+                compact_diff[parent].append(list(meth.keys())[0])
+        return compact_diff
 
     def _dict_diff(self, dict1, dict2):
         """Recursively search a dictionary for differences"""
@@ -118,6 +128,10 @@ class VersionDiff:
         logger.debug('Determined added/changed content.')
         removed, _ = self._dict_diff(ver2_content, ver1_content)
         logger.debug('Determined removed content.')
+        if self.compact:
+            added = self._truncate(added)
+            changed = self._truncate(changed)
+            removed = self._truncate(removed)
         self._vdiff = {
             f'Added in {self.ver1} since {self.ver2}': added,
             f'Changed in {self.ver1} since {self.ver2}': changed,
@@ -135,7 +149,8 @@ class VersionDiff:
                 f'tests/APIs/{self.api_name}/{self.ver2}-to-{self.ver1}-diff.yaml'
             )
         else:
-            fpath = Path(f'APIs/{self.api_name}/{self.ver2}-to-{self.ver1}-diff.yaml')
+            ftype = 'comp-diff' if self.compact else 'diff'
+            fpath = Path(f'APIs/{self.api_name}/{self.ver2}-to-{self.ver1}-{ftype}.yaml')
         if fpath.exists():
             fpath.unlink()
         # create the directory, if it doesn't exist
