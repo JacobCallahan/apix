@@ -18,17 +18,17 @@ class LibMaker:
             if apis:
                 self.api_name = apis[0]
             else:
-                logger.warning('No known APIs found! Try exploring.')
+                logger.warning("No known APIs found! Try exploring.")
                 return
 
         if not self.api_version:
             self.api_version = helpers.get_latest(self.api_name)
 
     def make_lib(self):
-        if self.api_name.lower() == 'satellite6':
+        if self.api_name.lower() == "satellite6":
             logger.info(
-                f'Making a nailgun library for {self.api_version}'
-                ' at libs/generated/nailgun/'
+                f"Making a nailgun library for {self.api_version}"
+                " at libs/generated/nailgun/"
             )
             api_dict = helpers.load_api(self.api_name, self.api_version)
             nailgun_maker = nailgun.NailgunMaker(

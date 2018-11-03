@@ -8,9 +8,9 @@ from apix.helpers import load_api
 
 def test_positive_fill_defaults():
     vdiff = diff.VersionDiff(mock=True)
-    assert vdiff.api_name == 'test123'
-    assert vdiff.ver1 == '2.1'
-    assert vdiff.ver2 == '1.3'
+    assert vdiff.api_name == "test123"
+    assert vdiff.ver1 == "2.1"
+    assert vdiff.ver2 == "1.3"
 
 
 def test_positive_save_diff():
@@ -25,5 +25,5 @@ def test_positive_save_diff():
 def test_positive_validate_diff():
     vdiff = diff.VersionDiff(mock=True)
     vdiff.diff()
-    good_diff = load_api('test123', 'good-diff', True)
+    good_diff = load_api("test123", "good-diff", True)
     assert vdiff._vdiff == good_diff

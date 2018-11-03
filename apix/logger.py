@@ -5,21 +5,21 @@ import urllib3
 import logzero
 
 
-def setup_logzero(level='info', path='logs/apix.log'):
-    log_fmt = '%(color)s[%(levelname)s %(asctime)s]%(end_color)s %(message)s'
-    if level == 'debug':
+def setup_logzero(level="info", path="logs/apix.log"):
+    log_fmt = "%(color)s[%(levelname)s %(asctime)s]%(end_color)s %(message)s"
+    if level == "debug":
         level = logging.DEBUG
         log_fmt = (
-            '%(color)s[%(levelname)1.1s %(asctime)s %(module)s:%(lineno)d]'
-            '%(end_color)s %(message)s'
+            "%(color)s[%(levelname)1.1s %(asctime)s %(module)s:%(lineno)d]"
+            "%(end_color)s %(message)s"
         )
-    elif level == 'info':
+    elif level == "info":
         level = logging.INFO
-    elif level == 'warning':
+    elif level == "warning":
         level = logging.WARNING
-    elif level == 'error':
+    elif level == "error":
         level = logging.ERROR
-    elif level == 'critical':
+    elif level == "critical":
         level = logging.CRITICAL
 
     formatter = logzero.LogFormatter(fmt=log_fmt)
