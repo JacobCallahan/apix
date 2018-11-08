@@ -24,7 +24,7 @@ requirements = [
 
 setup(
     name="apix",
-    version="0.2.5",
+    version="0.2.6",
     description="API Explorer: Discover, Track, Test.",
     long_description=readme + "\n\n" + history,
     author="Jacob J Callahan",
@@ -38,7 +38,7 @@ setup(
     zip_safe=False,
     keywords="apix",
     classifiers=[
-        "Development Status :: 1 - Pre-Alpha",
+        "Development Status :: 2- Beta",
         "Intended Audience :: Developers",
         "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
         "Natural Language :: English",

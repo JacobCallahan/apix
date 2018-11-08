@@ -2,6 +2,12 @@
 History
 =======
 
+0.2.6(2018-11-08)
+=================
+
++ Added compact modes to explore and diff
++ Switched code style to black
+
 0.2.5(2018-02-26)
 =================
 
