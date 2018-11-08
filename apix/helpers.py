@@ -6,7 +6,7 @@ from pathlib import Path
 
 def get_api_list(mock=False):
     """Return a list of saved apis, if they exist"""
-    api_dir = Path('APIs/' if not mock else 'tests/APIs/')
+    api_dir = Path("APIs/" if not mock else "tests/APIs/")
     # check exists
     if not api_dir.exists():
         return None
@@ -21,17 +21,19 @@ def get_api_list(mock=False):
 def get_ver_list(api_name, mock=False):
     """Return a list of saved api versions, if they exist"""
     if mock:
-        save_path = Path(f'tests/APIs/{api_name}')
+        save_path = Path(f"tests/APIs/{api_name}")
     else:
-        save_path = Path(f'APIs/{api_name}')
+        save_path = Path(f"APIs/{api_name}")
     # check exists
     if not save_path.exists():
         return None
     # get all versions in directory, that aren't diffs
     versions = [
-        v_file.name.replace('.yaml', '')
+        v_file.name.replace(".yaml", "")
         for v_file in save_path.iterdir()
-        if '-diff.' not in v_file.name and '.yaml' in v_file.name
+        if "-diff." not in v_file.name
+        and "-comp." not in v_file.name
+        and ".yaml" in v_file.name
     ] or []
     return sorted(versions, reverse=True)
 
@@ -58,10 +60,10 @@ def get_previous(api_name, version, mock=False):
 def load_api(api_name, version, mock=False):
     """Load the saved yaml to dict, if the file exists"""
     if mock:
-        a_path = Path(f'tests/APIs/{api_name}/{version}.yaml')
+        a_path = Path(f"tests/APIs/{api_name}/{version}.yaml")
     else:
-        a_path = Path(f'APIs/{api_name}/{version}.yaml')
+        a_path = Path(f"APIs/{api_name}/{version}.yaml")
 
     if not a_path.exists():
         return None
-    return yaml.load(a_path.open('r')) or None
+    return yaml.load(a_path.open("r")) or None

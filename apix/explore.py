@@ -20,20 +20,21 @@ class AsyncExplorer:
     host_url = attr.ib(default=None)
     base_path = attr.ib(default=None)
     parser = attr.ib(default=None)
+    compact = attr.ib(default=False)
     _data = attr.ib(default={}, repr=False)
     _queue = attr.ib(default=[], repr=False)
 
     def __attrs_post_init__(self):
         """perform the more complex steps of class initialization"""
         if not self.version:
-            self.version = time.strftime('%Y-%m-%d', time.localtime())
+            self.version = time.strftime("%Y-%m-%d", time.localtime())
         # choose the correct parser class from known parsers
-        if self.parser.lower() == 'apipie':
+        if self.parser.lower() == "apipie":
             self.parser = apipie.APIPie()
-        elif self.parser.lower() == 'test':
+        elif self.parser.lower() == "test":
             self.parser = test.TestParser()
         if not self.parser or isinstance(self.parser, str):
-            logger.warning('No known parser specified! Please review documentation.')
+            logger.warning("No known parser specified! Please review documentation.")
 
     async def _async_get(self, session, link):
         """visit a page and download the content, returning the link and content"""
@@ -60,8 +61,8 @@ class AsyncExplorer:
             loop.run_until_complete(self._async_loop(links))
         except aiohttp.client_exceptions.ServerDisconnectedError as err:
             logger.warning(
-                'Lost connection to host.{}'.join(
-                    'Retrying in 10 seconds' if retries else ''
+                "Lost connection to host.{}".join(
+                    "Retrying in 10 seconds" if retries else ""
                 )
             )
             if retries:
@@ -72,25 +73,31 @@ class AsyncExplorer:
         """scrape the content downloaded from each page"""
         while self._queue:
             link, content = self._queue.pop(0)
-            logger.debug(f'Scraping {link[1]}')
+            logger.debug(f"Scraping {link[1]}")
             self._data[link[1]] = self.parser.scrape_content(content)
 
     def save_data(self):
         """convert the stored data into yaml-friendly dict and save"""
         yaml_data = self.parser.yaml_format(self._data)
         if not yaml_data:
-            logger.warning('No data to be saved. Exiting.')
+            logger.warning("No data to be saved. Exiting.")
             return
 
-        fpath = Path(f'APIs/{self.name}/{self.version}.yaml')
+        if self.compact:
+            from apix.diff import VersionDiff
+
+            yaml_data = VersionDiff._truncate(yaml_data)
+            fpath = Path(f"APIs/{self.name}/{self.version}-comp.yaml")
+        else:
+            fpath = Path(f"APIs/{self.name}/{self.version}.yaml")
         if fpath.exists():
-            logger.warning(f'{fpath} already exists. Deleting..')
+            logger.warning(f"{fpath} already exists. Deleting..")
             fpath.unlink()
         # create the directory, if it doesn't exist
         fpath.parent.mkdir(parents=True, exist_ok=True)
         fpath.touch()
-        logger.info(f'Saving results to {fpath}')
-        with fpath.open('w+') as outfile:
+        logger.info(f"Saving results to {fpath}")
+        with fpath.open("w+") as outfile:
             yaml.dump(yaml_data, outfile, default_flow_style=False)
         return fpath
 
@@ -108,10 +115,10 @@ class AsyncExplorer:
                 f"{self.host_url}{self.base_path}."
             )
             return
-        self.base_path = self.base_path.replace('.html', '')  # for next strep
-        logger.info(f'Starting to explore {self.host_url}{self.base_path}')
+        self.base_path = self.base_path.replace(".html", "")  # for next strep
+        logger.info(f"Starting to explore {self.host_url}{self.base_path}")
         links = self.parser.pull_links(result, self.base_path)
-        logger.debug(f'Found {len(links)} links!')
+        logger.debug(f"Found {len(links)} links!")
         self._visit_links(links)
         # sort the results by link name, to normalize return order
         self._queue = sorted(self._queue, key=lambda x: x[0][1])

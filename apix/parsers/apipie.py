@@ -18,34 +18,35 @@ class APIPie:
 
     _data = attr.ib(default={}, repr=False)
 
-    def _data_to_yaml(self, index):
+    def _data_to_yaml(self, index, compact=False):
         """translate a url and content into paths and parameters"""
         # apidoc/v2/<entity>/<action>.html
         url = index
-        split_url = url.split('/')
-        action = split_url[-1].replace('.html', '')
-        action = 'list' if action == 'index' else action
+        split_url = url.split("/")
+        action = split_url[-1].replace(".html", "")
+        action = "list" if action == "index" else action
         try:
             entity = split_url[-2]
         except Exception as err:
             logger.error(err)
             return False, False
-
-        paths = self._data[index]['paths']
-        if '/' not in paths[0]:
+        if compact:
+            return entity, action
+        paths = self._data[index]["paths"]
+        if "/" not in paths[0]:
             return False, False
-        params = self._data[index]['params']
-        return entity, {action: {'paths': paths, 'parameters': params}}
+        params = self._data[index]["params"]
+        return entity, {action: {"paths": paths, "parameters": params}}
 
-    def yaml_format(self, data):
+    def yaml_format(self, data, compact=False):
         """compile all data into a yaml-compatible dict"""
         self._data, yaml_data = data, {}
         for index in self._data:
-            ent, res = self._data_to_yaml(index)
+            ent, res = self._data_to_yaml(index, compact)
             if ent and not yaml_data.get(ent, None):
-                yaml_data[ent] = {'methods': [res]}
+                yaml_data[ent] = {"methods": [res]}
             elif ent:
-                yaml_data[ent]['methods'].append(res)
+                yaml_data[ent]["methods"].append(res)
         return yaml_data
 
     @staticmethod
@@ -54,8 +55,8 @@ class APIPie:
         g_links = html.fromstring(result.content).iterlinks()
         links, last = [], None
         for link in g_links:
-            url = link[2].replace('../', '')
-            if '/' in url[len(base_path) :] and link[0].text and url != last:
+            url = link[2].replace("../", "")
+            if "/" in url[len(base_path) :] and link[0].text and url != last:
                 links.append((link[0].text, url))
                 last = url
         return links
@@ -72,11 +73,11 @@ class APIPie:
         param_list = []
         for param in params:
             temp_list = [
-                x for x in param.text_content().replace("  ", "").split('\n') if x
+                x for x in param.text_content().replace("  ", "").split("\n") if x
             ]
             param_list.append(temp_list[:2])
             # If there is a validation, include it in the results
-            if 'Validations:' in temp_list:
-                param_list[-1].append(temp_list[temp_list.index('Validations:') + 1])
+            if "Validations:" in temp_list:
+                param_list[-1].append(temp_list[temp_list.index("Validations:") + 1])
             param_list[-1] = " ~ ".join(param_list[-1])
-        return {'paths': path_list, 'params': param_list}
+        return {"paths": path_list, "params": param_list}

@@ -23,11 +23,11 @@ class TestParser:
     def _data_to_yaml(self, index):
         """Translate a url and text into 'paths' and 'parameters'"""
         url = index
-        split_url = url.split('.')
+        split_url = url.split(".")
         name = split_url[-1]
         first = self._data[index][0]
-        rest = ' ~ '.join(self._data[index][1:])
-        return url, {name: {'paths': first, 'parameters': rest}}
+        rest = " ~ ".join(self._data[index][1:])
+        return url, {name: {"paths": first, "parameters": rest}}
 
     def yaml_format(self, data):
         """compile all data into a yaml-compatible dict"""
@@ -35,9 +35,9 @@ class TestParser:
         for index in self._data:
             ent, res = self._data_to_yaml(index)
             if ent and not yaml_data.get(ent, None):
-                yaml_data[ent] = {'content': [res]}
+                yaml_data[ent] = {"content": [res]}
             elif ent:
-                yaml_data[ent]['content'].append(res)
+                yaml_data[ent]["content"].append(res)
         return yaml_data
 
     @staticmethod
@@ -46,8 +46,13 @@ class TestParser:
         g_links = html.fromstring(result.content).iterlinks()
         links, last = [], None
         for link in g_links:
-            url = link[2].replace('../', '')
-            if 'JacobCallahan' in url and link[0].text and url != last:
+            url = link[2].replace("../", "")
+            if (
+                "JacobCallahan" in url
+                and "sparkline" not in url
+                and link[0].text
+                and url != last
+            ):
                 links.append((link[0].text, url))
                 last = url
         return links
@@ -60,5 +65,5 @@ class TestParser:
         if title:
             title = title[0].text
         else:
-            title = 'This page had no title for some reason'
+            title = "This page had no title for some reason"
         return [x.strip() for x in title.split() if x]
