@@ -1,0 +1,131 @@
+import inspect
+import json
+import requests
+import sys
+import uuid
+
+import fauxfactory
+
+MYCLASSES = {name: obj for name, obj in inspect.getmembers(sys.modules[__name__]) if inspect.isclass(obj)}
+SESSIONS = {}
+
+class ~~ProductName~~:
+    def __init__(self, **kwargs):
+        self.hostname = "intel-lizardhead-02.lab.bos.redhat.com"
+        self._base_path = "https://{}".format(self.hostname)
+        self._headers = {
+            "auth": os.environ.get("TARGET_AUTH").split(":"),
+            "timeout": 120.0,
+            "verify": False,
+            "headers": {"content-type": "application/json"},
+        }
+        self._request_methods = {
+            "GET": requests.get,
+            "POST": requests.post,
+            "PUT": requests.put,
+            "DELETE": requests.delete,
+        }
+        self._session_id = kwargs.pop("_session_id", uuid.uuid4())
+        self._add_attr(kwargs)
+
+    def _add_attr(self, attributes={}):
+        if isinstance(attributes, dict):
+            for key, value in attributes.items():
+                self.__dict__[key] = value
+
+    def _format_payload(self, payload=None):
+        if payload and not isinstance(payload, str):
+            try:
+                return json.dumps(payload)
+            except SyntaxError:
+                raise Exception(
+                    "Error! Unable to format payload {}. Reverting to original value.".format(
+                        payload
+                    )
+                )
+        return payload
+
+    def _create_dep(self, dep_type):
+        """Create a dependency based on the below patterns
+        "type": "integer"       create an integer
+        "type": "alpha#15"      create a 15 character string
+        "type": "MyClass.name"  create a new class instance and use the "name" attribute
+        "type": ["integer", "alpha"] create a list with an integer and alphabetic string
+        "type": {"id": "integer", "name": "alpha#5"} create a dict with generated deps
+        """
+        if isinstance(dep_type, dict):
+            return {
+                key: self._create_dep(val.get("type", val))
+                for key, val
+                in dep_type.items()
+                if val.get("required")
+            }
+        elif isinstance(dep_type, list):
+            return [self._create_dep(dep) for dep in dep_type]
+        else:
+            d_type, d_attr, d_arg = None, "id", None
+            if "#" in dep_type:
+                dep_type, d_arg = dep_type.split("#")
+            if "." in dep_type:
+                d_type, d_attr = dep_type.split(".")
+            else:
+                d_type = dep_type
+
+            if d_type in MYCLASSES:
+                d_inst = MYCLASSES[d_type](_session_id=self._session_id)
+                d_inst.create()
+                return d_inst.__dict__.get(d_attr)
+            else:
+                faux_meth = fauxfactory.__dict__.get("gen_{}".format(d_type))
+                if faux_meth:
+                    return faux_meth(d_arg)
+        return None
+
+    def _fill_dependencies(self, params, payload):
+        for key, value in params.items():
+            if key not in payload:
+                if value["required"]:
+                    try:
+                        payload[key] = self._create_dep(value["type"])
+                    except:
+                        raise Exception("Unable to fill dependencies")
+        return payload
+
+    def _select_path(self, paths, kwargs=None):
+        """Return the first matching (method, path) based on the kwargs"""
+        if not isinstance(paths, list):
+            raise Exception(f"Expected paths to be list, got {paths}")
+        kwargs = {} if not kwargs else kwargs
+        for method, path in paths:
+            try:
+                path.format(**kwargs)
+                return method, path
+            except KeyError:
+                continue
+        return None, None
+
+    def _request(self, paths, params, kwargs=None):
+        caller = inspect.stack()[1][0].f_locals["self"]
+        method, path = self._select_path(paths, kwargs)
+        if not path:
+            raise Exception(f"No suitable paths found for {kwargs}\nAvailable: {paths.values()}")
+        all_args = caller.__dict__.copy()
+        all_args.update(kwargs)
+        path = self._base_path + path.format_map(all_args)
+        payload = {key: value for key, value in all_args.items() if key in params}
+        payload = None if not payload else self._format_payload(payload)
+        result = self._request_methods[method](url=path, data=payload, **self._headers)
+        if result.ok:
+            caller._add_attr(result.json().get("result", result.json()))
+        return result
+
+    def clean_session(self, max_attempts=5):
+        attempt = 1
+        while SESSIONS[self._session_id] and attempt <= max_attempts:
+            for i, entity in enumerate(SESSIONS[self._session_id]):
+                if entity.delete().ok:
+                    SESSIONS[self._session_id][i] = None
+            SESSIONS[self._session_id] = [x for x in SESSIONS[self._session_id] if x]
+
+
+~~feature classes~~

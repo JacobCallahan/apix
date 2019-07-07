@@ -14,6 +14,7 @@ requirements = [
     "aiohttp",
     "aiofiles",
     "attrs",
+    "black",
     "cchardet",
     "logzero",
     "lxml",

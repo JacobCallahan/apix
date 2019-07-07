@@ -153,13 +153,24 @@ class Main(object):
             help="The API version we're creating a library for (6.3).",
         )
         parser.add_argument(
+            "-t",
+            "--template",
+            type=str,
+            default=None,
+            help="The template to base your library on.",
+        )
+        parser.add_argument(
             "--debug", action="store_true", help="Enable debug loggin level."
         )
 
         args = parser.parse_args(sys.argv[2:])
         if args.debug:
             logger.setup_logzero(level="debug")
-        libmaker = LibMaker(api_name=args.api_name, api_version=args.version)
+        libmaker = LibMaker(
+            api_name=args.api_name,
+            api_version=args.version,
+            template_name=args.template,
+        )
         libmaker.make_lib()
 
     def list(self):

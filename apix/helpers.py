@@ -1,6 +1,7 @@
 # -*- encoding: utf-8 -*-
 """A collection of miscellaneous helpers that don't quite fit in."""
 import yaml
+from copy import deepcopy
 from pathlib import Path
 
 
@@ -57,6 +58,17 @@ def get_previous(api_name, version, mock=False):
     return None
 
 
+def shift_text(text, shift=1):
+    """Shifts blocks or a single line of text by 4 * shift spaces"""
+    new_text = ""
+    if "\n" in text:
+        for line in text.split("\n"):
+            new_text += "    " * shift + line + "\n"
+    else:
+        new_text = "    " * shift + text
+    return new_text
+
+
 def load_api(api_name, version, mock=False):
     """Load the saved yaml to dict, if the file exists"""
     if mock:
@@ -67,3 +79,18 @@ def load_api(api_name, version, mock=False):
     if not a_path.exists():
         return None
     return yaml.load(a_path.open("r")) or None
+
+
+def merge_dicts(dict1, dict2):
+    """Merge two nested dicitonaries together"""
+    if not isinstance(dict1, dict) or not isinstance(dict2, dict):
+        return dict1
+    merged = {}
+    dupe_keys = dict1.keys() & dict2.keys()
+    for key in dupe_keys:
+        merged[key] = merge_dicts(dict1[key], dict2[key])
+    for key in dict1.keys() - dupe_keys:
+        merged[key] = deepcopy(dict1[key])
+    for key in dict2.keys() - dupe_keys:
+        merged[key] = deepcopy(dict2[key])
+    return merged
