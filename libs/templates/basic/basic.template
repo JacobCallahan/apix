@@ -1,0 +1,60 @@
+import json
+import os
+import requests
+
+
+class ~~ProductName~~:
+    def __init__(self):
+        self.hostname = os.environ.get("TARGET_HOST")
+        self._base_path = "https://{}".format(self.hostname)
+        self._headers = {
+            "auth": os.environ.get("TARGET_AUTH").split(":"),
+            "timeout": 120.0,
+            "verify": False,
+            "headers": {"content-type": "application/json"},
+        }
+        self._request_methods = {
+            "GET": requests.get,
+            "POST": requests.post,
+            "PUT": requests.put,
+            "DELETE": requests.delete,
+        }
+
+    def _format_payload(self, payload=None):
+        if payload and not isinstance(payload, str):
+            try:
+                return json.dumps(payload)
+            except SyntaxError:
+                print(
+                    "Error! Unable to format payload {}. Reverting to original value.".format(
+                        payload
+                    )
+                )
+                return payload
+
+    def _select_path(self, paths, kwargs=None):
+        """Return the first matching (method, path) based on the kwargs"""
+        if not isinstance(paths, list):
+            raise Exception(f"Expected paths to be list, got {paths}")
+        kwargs = {} if not kwargs else kwargs
+        for method, path in paths:
+            try:
+                path.format(**kwargs)
+                return method, path
+            except KeyError:
+                continue
+        return None, None
+
+    def _request(self, paths, params, kwargs=None):
+        payload = {key: value for key, value in kwargs.items() if key in params}
+        method, path = self._select_path(paths, kwargs)
+        if not path:
+            raise Exception(f"No suitable paths found for {kwargs}\nAvailable: {paths.values()}")
+        path = self._base_path + path.format_map(kwargs)
+        if "{" in path:
+            raise Exception(f"Missing parameter(s) in path: {path}")
+        payload = None if not payload else self._format_payload(payload)
+        return self._request_methods[method](url=path, data=payload, **self._headers)
+
+
+~~feature classes~~

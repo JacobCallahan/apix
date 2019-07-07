@@ -1,0 +1,71 @@
+import inspect
+import json
+import os
+import requests
+
+
+class ~~ProductName~~:
+    def __init__(self, **kwargs):
+        self.hostname = os.environ.get("TARGET_HOST")
+        self._base_path = "https://{}".format(self.hostname)
+        self._headers = {
+            "auth": os.environ.get("TARGET_AUTH").split(":"),
+            "timeout": 120.0,
+            "verify": False,
+            "headers": {"content-type": "application/json"},
+        }
+        self._request_methods = {
+            "GET": requests.get,
+            "POST": requests.post,
+            "PUT": requests.put,
+            "DELETE": requests.delete,
+        }
+        self._add_attr(kwargs)
+
+    def _add_attr(self, attributes={}):
+        if isinstance(attributes, dict):
+            for key, value in attributes.items():
+                self.__dict__[key] = value
+
+    def _format_payload(self, payload=None):
+        if payload and not isinstance(payload, str):
+            try:
+                return json.dumps(payload)
+            except SyntaxError:
+                print(
+                    "Error! Unable to format payload {}. Reverting to original value.".format(
+                        payload
+                    )
+                )
+                return payload
+
+    def _select_path(self, paths, kwargs=None):
+        """Return the first matching (method, path) based on the kwargs"""
+        if not isinstance(paths, list):
+            raise Exception(f"Expected paths to be list, got {paths}")
+        kwargs = {} if not kwargs else kwargs
+        for method, path in paths:
+            try:
+                path.format(**kwargs)
+                return method, path
+            except KeyError:
+                continue
+        return None, None
+
+    def _request(self, paths, params, kwargs=None):
+        caller = inspect.stack()[1][0].f_locals["self"]
+        method, path = self._select_path(paths, kwargs)
+        if not path:
+            raise Exception(f"No suitable paths found for {kwargs}\nAvailable: {paths.values()}")
+        all_args = caller.__dict__.copy()
+        all_args.update(kwargs)
+        path = self._base_path + path.format_map(all_args)
+        payload = {key: value for key, value in all_args.items() if key in params}
+        payload = None if not payload else self._format_payload(payload)
+        result = self._request_methods[method](url=path, data=payload, **self._headers)
+        if result.ok:
+            caller._add_attr(result.json().get("result", result.json()))
+        return result
+
+
+~~feature classes~~

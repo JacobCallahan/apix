@@ -1,0 +1,4 @@
+def ~~method_name~~(self, **kwargs):
+    params = ~~param_list~~
+    paths = ~~path_list~~
+    return super()._request(paths, params, kwargs)
