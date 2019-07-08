@@ -2,6 +2,12 @@
 History
 =======
 
+0.3.0(2019-07-07)
+=================
+
++ Added three new templates (basic, intermediate, advanced)
++ Modified the libmaker to be much more flexible
+
 0.2.6(2018-11-08)
 =================
 

@@ -52,17 +52,21 @@ Library Maker
 You can setup apix to populate any library you may be using to interact with your API.
 You will have to provide template files, as well as extend apix's code base to populate those templates.
 apix comes with the ability to populate Nailgun, a python library used for Satellite 6.
+Additionally, apix comes with three pre-made general purpose templates:
+ - basic: This template does little more than let you interact with an API
+ - intermediate: Building on basic, this will hold on to gained information
+ - advanced: Bulding on intermediate, advanced will also try to resolve dependencies
 By default it will use the most recently explored API and the latest known versions (with dated version sorted to the bottom).
 
 **Examples:**
 
 ```apix makelib --help```
 
-```apix makelib -n satellite6 -v 6.3```
+```apix makelib -n satellite6 -v 6.3 -t nailgun```
 
-```apix makelib -n satellite6```
+```apix makelib -n satellite6 -t advanced```
 
-```apix makelib```
+```apix makelib -t intermediate```
 
 
 List

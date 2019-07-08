@@ -25,7 +25,7 @@ requirements = [
 
 setup(
     name="apix",
-    version="0.2.6",
+    version="0.3.0",
     description="API Explorer: Discover, Track, Test.",
     long_description=readme + "\n\n" + history,
     author="Jacob J Callahan",
@@ -45,5 +45,6 @@ setup(
         "Natural Language :: English",
         "Programming Language :: Python :: 3",
         "Programming Language :: Python :: 3.6",
+        "Programming Language :: Python :: 3.7",
     ],
 )
