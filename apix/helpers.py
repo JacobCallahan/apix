@@ -5,10 +5,11 @@ from copy import deepcopy
 from pathlib import Path
 
 
-def get_api_list(mock=False):
+def get_api_list(data_dir=None, mock=False):
     """Return a list of saved apis, if they exist"""
-    api_dir = Path("APIs/" if not mock else "tests/APIs/")
+    api_dir = Path(f"{data_dir}APIs/" if not mock else f"{data_dir}tests/APIs/")
     # check exists
+    print(f"API Dir: {api_dir}")
     if not api_dir.exists():
         return None
     # get all versions in directory, that aren't diffs
@@ -16,16 +17,18 @@ def get_api_list(mock=False):
         (api.name, api.stat().st_mtime) for api in api_dir.iterdir() if api.is_dir()
     ] or []
     apis = [api for api, _ in sorted(apis, key=lambda x: x[1], reverse=True)]
+    print(f"APIs: {apis}")
     return apis
 
 
-def get_ver_list(api_name, mock=False):
+def get_ver_list(api_name, data_dir=None, mock=False):
     """Return a list of saved api versions, if they exist"""
     if mock:
-        save_path = Path(f"tests/APIs/{api_name}")
+        save_path = Path(f"{data_dir}tests/APIs/{api_name}")
     else:
-        save_path = Path(f"APIs/{api_name}")
+        save_path = Path(f"{data_dir}APIs/{api_name}")
     # check exists
+    print(f"save path: {save_path}")
     if not save_path.exists():
         return None
     # get all versions in directory, that aren't diffs
@@ -36,22 +39,24 @@ def get_ver_list(api_name, mock=False):
         and "-comp." not in v_file.name
         and ".yaml" in v_file.name
     ] or []
+    print(f"versions {versions}")
     return sorted(versions, reverse=True)
 
 
-def get_latest(api_name=None, mock=False):
+def get_latest(api_name=None, data_dir=None, mock=False):
     """Get the latest api version, if it exists"""
     if not api_name:
-        return get_api_list(mock=mock)[0]
+        return get_api_list(data_dir, mock=mock)[0]
     else:
-        ver_list = get_ver_list(api_name, mock=mock) or [None]
+        ver_list = get_ver_list(api_name, data_dir, mock=mock) or [None]
         return ver_list[0]
 
 
-def get_previous(api_name, version, mock=False):
+def get_previous(api_name, version, data_dir=None, mock=False):
     """Get the api version before `version`, if it isn't last"""
-    api_list = get_ver_list(api_name, mock=mock)
-    if version in api_list:
+    api_list = get_ver_list(api_name, data_dir, mock=mock)
+    print(f"prev list: {api_list}")
+    if api_list and version in api_list:
         v_pos = api_list.index(version)
         if v_pos + 2 <= len(api_list):
             return api_list[v_pos + 1]
@@ -69,13 +74,13 @@ def shift_text(text, shift=1):
     return new_text
 
 
-def load_api(api_name, version, mock=False):
+def load_api(api_name, version, data_dir=None, mock=False):
     """Load the saved yaml to dict, if the file exists"""
     if mock:
-        a_path = Path(f"tests/APIs/{api_name}/{version}.yaml")
+        a_path = Path(f"{data_dir}tests/APIs/{api_name}/{version}.yaml")
     else:
-        a_path = Path(f"APIs/{api_name}/{version}.yaml")
-
+        a_path = Path(f"{data_dir}APIs/{api_name}/{version}.yaml")
+    print(f"load path {a_path}")
     if not a_path.exists():
         return None
     return yaml.load(a_path.open("r")) or None

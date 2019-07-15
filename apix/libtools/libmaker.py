@@ -43,4 +43,3 @@ class LibMaker:
             api_dict=api_dict, api_name=self.api_name, api_version=self.api_version
         )
         lib_maker.make()
-

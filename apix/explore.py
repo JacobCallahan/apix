@@ -20,6 +20,7 @@ class AsyncExplorer:
     host_url = attr.ib(default=None)
     base_path = attr.ib(default=None)
     parser = attr.ib(default=None)
+    data_dir = attr.ib(default=None)
     compact = attr.ib(default=False)
     _data = attr.ib(default={}, repr=False)
     _queue = attr.ib(default=[], repr=False)
@@ -87,9 +88,9 @@ class AsyncExplorer:
             from apix.diff import VersionDiff
 
             yaml_data = VersionDiff._truncate(yaml_data)
-            fpath = Path(f"APIs/{self.name}/{self.version}-comp.yaml")
+            fpath = Path(f"{self.data_dir}APIs/{self.name}/{self.version}-comp.yaml")
         else:
-            fpath = Path(f"APIs/{self.name}/{self.version}.yaml")
+            fpath = Path(f"{self.data_dir}APIs/{self.name}/{self.version}.yaml")
         if fpath.exists():
             logger.warning(f"{fpath} already exists. Deleting..")
             fpath.unlink()
