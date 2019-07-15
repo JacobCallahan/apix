@@ -27,7 +27,7 @@ def test_positive_normalize_param_name():
 
 
 def test_positive_get_base_params():
-    api_dict = load_api("test123", "2.1", True)
+    api_dict = load_api("test123", "2.1", "./", True)
     base_params = nailgun.EntityMaker.get_base_params(api_dict["entity_one"])
     assert base_params
     seen = []
@@ -71,7 +71,7 @@ def test_positive_arg_override():
 
 
 def test_positive_get_method_paths():
-    api_dict = load_api("test123", "2.1", True)
+    api_dict = load_api("test123", "2.1", "./", True)
     emaker = nailgun.EntityMaker(api_dict, "test123", "2.1")
     meth_paths = emaker.get_method_paths("entity_one")
     assert "update" in meth_paths
@@ -79,13 +79,13 @@ def test_positive_get_method_paths():
 
 
 def test_positive_get_base_path():
-    api_dict = load_api("test123", "2.1", True)
+    api_dict = load_api("test123", "2.1", "./", True)
     emaker = nailgun.EntityMaker(api_dict, "test123", "2.1")
     assert emaker.get_base_path("entity_two") == "api/entity_two"
 
 
 def test_positive_entity_to_field():
-    api_dict = load_api("test123", "2.1", True)
+    api_dict = load_api("test123", "2.1", "./", True)
     emaker = nailgun.EntityMaker(api_dict, "test123", "2.1")
     field = emaker.param_to_field(
         class_name="entity_one",

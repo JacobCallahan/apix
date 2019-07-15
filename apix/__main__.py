@@ -68,6 +68,12 @@ class Main(object):
             help="The name of the parser to use when pulling data (apipie).",
         )
         parser.add_argument(
+            "--data-dir",
+            type=str,
+            default="./",
+            help="The base directory in which to save exports.",
+        )
+        parser.add_argument(
             "--compact",
             action="store_true",
             help="Strip all the extra information from the saved data.",
@@ -85,6 +91,7 @@ class Main(object):
             host_url=args.host_url,
             base_path=args.base_path,
             parser=args.parser,
+            data_dir=args.data_dir,
             compact=args.compact,
         )
         explorer.explore()
@@ -115,6 +122,12 @@ class Main(object):
             help="A previous version of the API",
         )
         parser.add_argument(
+            "--data-dir",
+            type=str,
+            default="./",
+            help="The base directory in which to save diffs.",
+        )
+        parser.add_argument(
             "--compact",
             action="store_true",
             help="Strip all the extra information from the diff.",
@@ -130,6 +143,7 @@ class Main(object):
             api_name=args.api_name,
             ver1=args.latest_version,
             ver2=args.previous_version,
+            data_dir=args.data_dir,
             compact=args.compact,
         )
         vdiff.diff()
@@ -160,6 +174,12 @@ class Main(object):
             help="The template to base your library on.",
         )
         parser.add_argument(
+            "--data-dir",
+            type=str,
+            default="./",
+            help="The base directory in which to save libraries.",
+        )
+        parser.add_argument(
             "--debug", action="store_true", help="Enable debug loggin level."
         )
 
@@ -184,13 +204,27 @@ class Main(object):
             default=None,
             help="The name of the api you want to list versions of.",
         )
+        parser.add_argument(
+            "--data-dir",
+            type=str,
+            default="./",
+            help="The base directory in which to search for stored exports.",
+        )
 
         args = parser.parse_args(sys.argv[2:])
 
         if args.subject == "apis":
-            print("\n".join(get_api_list()))
+            api_list = get_api_list(args.data_dir)
+            if api_list:
+                print("\n".join(api_list))
+            else:
+                print(f"Unable to find saved APIs in {args.data_dir}")
         elif args.subject == "versions" and args.api_name:
-            print("\n".join(get_ver_list(args.api_name)))
+            ver_list = get_ver_list(args.api_name, args.data_dir)
+            if ver_list:
+                print("\n".join(ver_list))
+            else:
+                print(f"Unable to find saved versions in {args.data_dir}")
 
     def test(self):
         """List out some information about our entities and inputs."""

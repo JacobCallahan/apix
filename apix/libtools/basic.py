@@ -99,7 +99,9 @@ class EntityMaker:
         for method in methods:
             for method_name, contents in method.items():
                 temp_late = loaded_template  # hahaha get it?!
-                temp_late = temp_late.replace("~~method_name~~", self.fix_name(method_name))
+                temp_late = temp_late.replace(
+                    "~~method_name~~", self.fix_name(method_name)
+                )
                 temp_late = temp_late.replace(
                     "~~param_list~~", str(self.compile_params(contents["parameters"]))
                 )
@@ -154,9 +156,7 @@ class EntityMaker:
         )
         loaded_ent_f = loaded_ent_f.replace("~~feature classes~~", all_entity_templates)
 
-        save_file = Path(
-            f"libs/generated/basic/{self.api_version}/{self.api_name}.py"
-        )
+        save_file = Path(f"libs/generated/basic/{self.api_version}/{self.api_name}.py")
         if save_file.exists():
             logger.warning(f"Overwriting {save_file}")
             save_file.unlink()

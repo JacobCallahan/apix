@@ -12,6 +12,7 @@ class VersionDiff:
     api_name = attr.ib(default=None)
     ver1 = attr.ib(default=None)
     ver2 = attr.ib(default=None)
+    data_dir = attr.ib(default=None)
     compact = attr.ib(default=False)
     mock = attr.ib(default=False, repr=False)
     _vdiff = attr.ib(default={})
@@ -19,13 +20,15 @@ class VersionDiff:
     def __attrs_post_init__(self):
         """Load the API versions, if not provided"""
         if not self.api_name:
-            self.api_name = get_latest(mock=self.mock)
+            self.api_name = get_latest(data_dir=self.data_dir, mock=self.mock)
         if not self.ver1:
             # get the latest saved version
-            self.ver1 = get_latest(api_name=self.api_name, mock=self.mock)
+            self.ver1 = get_latest(
+                api_name=self.api_name, data_dir=self.data_dir, mock=self.mock
+            )
         if not self.ver2:
             # get the version before ver1
-            self.ver2 = get_previous(self.api_name, self.ver1, self.mock)
+            self.ver2 = get_previous(self.api_name, self.ver1, self.data_dir, self.mock)
 
     @staticmethod
     def _truncate(diff_dict):
@@ -120,9 +123,9 @@ class VersionDiff:
             return None
         logger.info(f"Performing diff between {self.ver1} and {self.ver2}")
 
-        ver1_content = load_api(self.api_name, self.ver1, self.mock)
+        ver1_content = load_api(self.api_name, self.ver1, self.data_dir, self.mock)
         logger.debug(f"Loaded {self.ver1}.")
-        ver2_content = load_api(self.api_name, self.ver2, self.mock)
+        ver2_content = load_api(self.api_name, self.ver2, self.data_dir, self.mock)
         logger.debug(f"Loaded {self.ver2}.")
 
         added, changed = self._dict_diff(ver1_content, ver2_content)
@@ -147,12 +150,12 @@ class VersionDiff:
 
         if self.mock:
             fpath = Path(
-                f"tests/APIs/{self.api_name}/{self.ver2}-to-{self.ver1}-diff.yaml"
+                f"{self.data_dir}tests/APIs/{self.api_name}/{self.ver2}-to-{self.ver1}-diff.yaml"
             )
         else:
             ftype = "comp-diff" if self.compact else "diff"
             fpath = Path(
-                f"APIs/{self.api_name}/{self.ver2}-to-{self.ver1}-{ftype}.yaml"
+                f"{self.data_dir}APIs/{self.api_name}/{self.ver2}-to-{self.ver1}-{ftype}.yaml"
             )
         if fpath.exists():
             fpath.unlink()
