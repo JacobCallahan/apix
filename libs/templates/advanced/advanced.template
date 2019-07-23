@@ -1,5 +1,6 @@
 import inspect
 import json
+import os
 import requests
 import sys
 import uuid
@@ -11,7 +12,7 @@ SESSIONS = {}
 
 class ~~ProductName~~:
     def __init__(self, **kwargs):
-        self.hostname = "intel-lizardhead-02.lab.bos.redhat.com"
+        self.hostname = os.environ.get("TARGET_HOST")
         self._base_path = "https://{}".format(self.hostname)
         self._headers = {
             "auth": os.environ.get("TARGET_AUTH").split(":"),

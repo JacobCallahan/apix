@@ -170,7 +170,7 @@ class Main(object):
             "-t",
             "--template",
             type=str,
-            default=None,
+            default="advanced",
             help="The template to base your library on.",
         )
         parser.add_argument(
@@ -190,6 +190,7 @@ class Main(object):
             api_name=args.api_name,
             api_version=args.version,
             template_name=args.template,
+            data_dir=args.data_dir,
         )
         libmaker.make_lib()
 

@@ -19,10 +19,11 @@ class LibMaker:
     api_name = attr.ib(default=None)
     api_version = attr.ib(default=None)
     template_name = attr.ib(default=None)
+    data_dir = attr.ib(default=None)
 
     def __attrs_post_init__(self):
         if not self.api_name:
-            apis = helpers.get_api_list()
+            apis = helpers.get_api_list(data_dir=self.data_dir)
             if apis:
                 self.api_name = apis[0]
             else:
@@ -30,7 +31,7 @@ class LibMaker:
                 return
 
         if not self.api_version:
-            self.api_version = helpers.get_latest(self.api_name)
+            self.api_version = helpers.get_latest(self.api_name, data_dir=self.data_dir)
 
     def make_lib(self):
         TemplateMaker = TEMPLATE_MAKERS.get(self.template_name.lower())
@@ -38,7 +39,7 @@ class LibMaker:
             logger.warning(f"I don't know how to make a library for {self.api_name}")
             return
         logger.info(f"Making a {self.template_name} library for {self.api_version}")
-        api_dict = helpers.load_api(self.api_name, self.api_version)
+        api_dict = helpers.load_api(self.api_name, self.api_version, data_dir=self.data_dir)
         lib_maker = TemplateMaker(
             api_dict=api_dict, api_name=self.api_name, api_version=self.api_version
         )
