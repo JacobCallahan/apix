@@ -77,7 +77,7 @@ class AsyncExplorer:
             logger.debug(f"Scraping {link[1]}")
             self._data[link[1]] = self.parser.scrape_content(content)
 
-    def save_data(self):
+    def save_data(self, return_path=False):
         """convert the stored data into yaml-friendly dict and save"""
         yaml_data = self.parser.yaml_format(self._data)
         if not yaml_data:
@@ -100,7 +100,8 @@ class AsyncExplorer:
         logger.info(f"Saving results to {fpath}")
         with fpath.open("w+") as outfile:
             yaml.dump(yaml_data, outfile, default_flow_style=False)
-        return fpath
+        if return_path:
+            return fpath
 
     def explore(self):
         """main function for the explore module
