@@ -96,6 +96,7 @@ class Main(object):
         )
         explorer.explore()
         explorer.save_data()
+        sys.exit(0)
 
     def diff(self):
         """Determine the changes between two API versions"""
@@ -148,6 +149,7 @@ class Main(object):
         )
         vdiff.diff()
         vdiff.save_diff()
+        sys.exit(0)
 
     def makelib(self):
         """Create a library to interact with a specific API version"""
@@ -193,6 +195,7 @@ class Main(object):
             data_dir=args.data_dir,
         )
         libmaker.make_lib()
+        sys.exit(0)
 
     def list(self):
         """List out the API information we have stored"""
@@ -226,6 +229,7 @@ class Main(object):
                 print("\n".join(ver_list))
             else:
                 print(f"Unable to find saved versions in {args.data_dir}")
+        sys.exit(0)
 
     def test(self):
         """List out some information about our entities and inputs."""
@@ -242,6 +246,7 @@ class Main(object):
         else:
             pyargs = ["-q"]
         pytest.cmdline.main(args=pyargs)
+        sys.exit(0)
 
     def __repr__(self):
         return None

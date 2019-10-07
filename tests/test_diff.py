@@ -17,7 +17,7 @@ def test_positive_save_diff():
     vdiff = diff.VersionDiff(data_dir="./", mock=True)
     vdiff.diff()
     assert vdiff._vdiff
-    path = vdiff.save_diff()
+    path = vdiff.save_diff(return_path=True)
     assert Path(path).exists()
     Path(path).unlink()
 

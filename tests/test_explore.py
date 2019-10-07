@@ -13,7 +13,7 @@ def test_positive_explore():
         parser="test",
     )
     assert t_explorer.explore()
-    save_file = t_explorer.save_data()
+    save_file = t_explorer.save_data(return_path=True)
     assert save_file.exists()
     data_dir = save_file.parent
     save_file.unlink()

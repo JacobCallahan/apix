@@ -142,7 +142,7 @@ class VersionDiff:
             f"Removed since {self.ver2}": removed,
         }
 
-    def save_diff(self):
+    def save_diff(self, return_path=False):
         """Save the currently stored diff"""
         if not self._vdiff:
             logger.warning("No data to be saved. Exiting.")
@@ -165,4 +165,5 @@ class VersionDiff:
         logger.info(f"Saving results to {fpath}")
         with fpath.open("w+") as outfile:
             yaml.dump(self._vdiff, outfile, default_flow_style=False)
-        return fpath
+        if return_path:
+            return fpath
