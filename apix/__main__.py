@@ -6,7 +6,7 @@ import sys
 from apix.explore import AsyncExplorer
 from apix.diff import VersionDiff
 from apix.libtools.libmaker import LibMaker
-from apix.helpers import get_api_list, get_ver_list
+from apix.helpers import get_api_list, get_ver_list, LooseVersion
 from apix import logger
 
 
@@ -85,6 +85,11 @@ class Main(object):
         args = parser.parse_args(sys.argv[2:])
         if args.debug:
             logger.setup_logzero(level="debug")
+        try:
+            LooseVersion(args.version)
+        except ValueError as err:
+            logger.error(err)
+            sys.exit(1)
         explorer = AsyncExplorer(
             name=args.api_name,
             version=args.version,

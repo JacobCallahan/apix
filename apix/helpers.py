@@ -1,8 +1,19 @@
 # -*- encoding: utf-8 -*-
 """A collection of miscellaneous helpers that don't quite fit in."""
+import re
 import yaml
 from copy import deepcopy
+from distutils.version import StrictVersion
+from logzero import logger
 from pathlib import Path
+
+
+class LooseVersion(StrictVersion):
+    """This class adds the characters 's' and '-' to those allowed by StrictVersion"""
+
+    version_re = re.compile(
+        r"^(\d+) \. (\d+) (\. (\d+))? ([abs-](\d+))?$", re.VERBOSE | re.ASCII
+    )
 
 
 def get_api_list(data_dir=None, mock=False):
@@ -11,11 +22,9 @@ def get_api_list(data_dir=None, mock=False):
     # check exists
     if not api_dir.exists():
         return None
-    # get all versions in directory, that aren't diffs
-    apis = [
-        (api.name, api.stat().st_mtime) for api in api_dir.iterdir() if api.is_dir()
-    ] or []
-    apis = [api for api, _ in sorted(apis, key=lambda x: x[1], reverse=True)]
+    # get all apis in directory
+    apis = [api.name for api in api_dir.iterdir() if api.is_dir()] or []
+    apis.sort(reverse=True)
     return apis
 
 
@@ -36,7 +45,12 @@ def get_ver_list(api_name, data_dir=None, mock=False):
         and "-comp." not in v_file.name
         and ".yaml" in v_file.name
     ] or []
-    return sorted(versions, reverse=True)
+    try:
+        versions.sort(key=LooseVersion, reverse=True)
+    except ValueError as err:
+        logger.error(f"Encountered an invalid version number. Stopping\n{err}")
+        return None
+    return versions
 
 
 def get_latest(api_name=None, data_dir=None, mock=False):

@@ -28,7 +28,7 @@ class AsyncExplorer:
     def __attrs_post_init__(self):
         """perform the more complex steps of class initialization"""
         if not self.version:
-            self.version = time.strftime("%Y-%m-%d", time.localtime())
+            self.version = time.strftime("%Y.%m.%d", time.localtime())
         # choose the correct parser class from known parsers
         if self.parser.lower() == "apipie":
             self.parser = apipie.APIPie()
