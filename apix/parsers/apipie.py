@@ -9,75 +9,42 @@ Parser classes must currently implement the following methods:
 """
 import attr
 from logzero import logger
-from lxml import html
 
 
 @attr.s()
 class APIPie:
     """Parser class for Ruby's APIPie apidoc generator"""
 
-    _data = attr.ib(default={}, repr=False)
-
-    def _data_to_yaml(self, index, compact=False):
-        """translate a url and content into paths and parameters"""
-        # apidoc/v2/<entity>/<action>.html
-        url = index
-        split_url = url.split("/")
-        action = split_url[-1].replace(".html", "")
-        action = "list" if action == "index" else action
-        try:
-            entity = split_url[-2]
-        except Exception as err:
-            logger.error(err)
-            return False, False
-        if compact:
-            return entity, action
-        paths = self._data[index]["paths"]
-        if "/" not in paths[0]:
-            return False, False
-        params = self._data[index]["params"]
-        return entity, {action: {"paths": paths, "parameters": params}}
-
-    def yaml_format(self, data, compact=False):
-        """compile all data into a yaml-compatible dict"""
-        self._data, yaml_data = data, {}
-        for index in self._data:
-            ent, res = self._data_to_yaml(index, compact)
-            if ent and not yaml_data.get(ent, None):
-                yaml_data[ent] = {"methods": [res]}
-            elif ent:
-                yaml_data[ent]["methods"].append(res)
-        return yaml_data
+    _data = attr.ib(default=attr.Factory(dict), repr=False)
+    params = attr.ib(default=attr.Factory(dict), repr=False)
 
     @staticmethod
-    def pull_links(result, base_path):
-        """return all desired links from the target page"""
-        g_links = html.fromstring(result.content).iterlinks()
-        links, last = [], None
-        for link in g_links:
-            url = link[2].replace("../", "")
-            if "/" in url[len(base_path) :] and link[0].text and url != last:
-                links.append((link[0].text, url))
-                last = url
-        return links
+    def _compile_method(method_dict):
+        """form the parameters and paths lists"""
+        params = [
+            f'{param["name"]} ~ {"required" if param["required"] else "optional"} ~ {param["expected_type"]}'
+            for param in method_dict["params"]
+        ]
+        paths = [
+            f'{path["http_method"].upper()} {path["api_url"]}'
+            for path in method_dict["apis"]
+        ]
+        return {"paths": paths, "params": params}
 
-    @staticmethod
-    def scrape_content(content):
-        """pull the paths and parameters from the h1 and tables on the page"""
-        tree = html.fromstring(content)
-        paths = tree.xpath("//h1")
-        path_list = []
-        for path in paths:
-            path_list.append(path.text.replace("\n      ", ""))
-        params = tree.xpath("//table/tbody/tr")
-        param_list = []
-        for param in params:
-            temp_list = [
-                x for x in param.text_content().replace("  ", "").split("\n") if x
-            ]
-            param_list.append(temp_list[:2])
-            # If there is a validation, include it in the results
-            if "Validations:" in temp_list:
-                param_list[-1].append(temp_list[temp_list.index("Validations:") + 1])
-            param_list[-1] = " ~ ".join(param_list[-1])
-        return {"paths": path_list, "params": param_list}
+    def scrape_content(self, result):
+        """Compile the data into their corresponding classifications"""
+        entity_docs = result.json()["docs"]["resources"]
+        for name, data in entity_docs.items():
+            logger.debug(f"Compiling {name} with {len(data['methods'])} methods")
+            self._data[name] = {"methods": []}
+            for method in data["methods"]:
+                self._data[name]["methods"].append(
+                    {method["name"]: self._compile_method(method)}
+                )
+                self.params.update(
+                    {param["name"]: param for param in method["params"]}
+                )
+
+    def yaml_format(self, ingore=None):
+        """Return the compiled data in a yaml-friendly format"""
+        return self._data

@@ -12,10 +12,10 @@ with open("HISTORY.rst") as history_file:
 requirements = [
     "aiodns",
     "aiohttp",
-    "aiofiles",
     "attrs",
     "black",
-    "cchardet",
+    # "cchardet",
+    "click",
     "logzero",
     "lxml",
     "pyyaml",
@@ -25,14 +25,14 @@ requirements = [
 
 setup(
     name="apix",
-    version="0.3.1",
+    version="0.4.0",
     description="API Explorer: Discover, Track, Test.",
     long_description=readme + "\n\n" + history,
     author="Jacob J Callahan",
     author_email="jacob.callahan05@@gmail.com",
     url="https://github.com/JacobCallahan/apix",
     packages=["apix", "apix.libtools", "apix.parsers"],
-    entry_points={"console_scripts": ["apix=apix.__main__:Main"]},
+    entry_points={"console_scripts": ["apix=apix.commands:cli"]},
     include_package_data=True,
     install_requires=requirements,
     license="GNU General Public License v3",
@@ -44,7 +44,8 @@ setup(
         "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
         "Natural Language :: English",
         "Programming Language :: Python :: 3",
-        "Programming Language :: Python :: 3.6",
-        "Programming Language :: Python :: 3.7",
+        "Programming Language :: Python :: 3.9",
+        "Programming Language :: Python :: 3.10",
+        "Programming Language :: Python :: 3.11"
     ],
 )

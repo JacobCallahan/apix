@@ -2,6 +2,16 @@
 History
 =======
 
+0.4.0(2023-04-20)
+=================
+
++ Refactored a few things
++ Modernized the repo a bit, getting rid of travis in favor of github actions
++ Moved to click-based cli
++ Added a new apipie parser that doesn't need to visit each link
++ Moved old apipie parser to an unused file
++ Added a new compact subcommand to convert existing data to a compact format
+
 0.3.1(2019-07-15)
 =================
 
