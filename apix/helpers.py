@@ -3,6 +3,7 @@
 import yaml
 from copy import deepcopy
 from pathlib import Path
+from logzero import logger
 
 
 def get_api_list(data_dir=None, mock=False):
@@ -77,7 +78,24 @@ def load_api(api_name, version, data_dir=None, mock=False):
         a_path = Path(f"{data_dir}APIs/{api_name}/{version}.yaml")
     if not a_path.exists():
         return None
-    return yaml.load(a_path.open("r")) or None
+    logger.info(f"Loading {api_name} v{version} from {a_path}")
+    return yaml.load(a_path.open("r"), Loader=yaml.Loader) or None
+
+
+def save_api(api_name, version, api_dict, data_dir=None, compact=False, mock=False):
+    """Save the dict to yaml, if the file doesn't exist"""
+    if mock:
+        a_path = Path(
+            f"{data_dir}tests/APIs/{api_name}/{version}{'-comp' if compact else ''}.yaml"
+        )
+    else:
+        a_path = Path(
+            f"{data_dir}APIs/{api_name}/{version}{'-comp' if compact else ''}.yaml"
+        )
+    a_path.parent.mkdir(parents=True, exist_ok=True)
+    logger.info(f"Saving {api_name} v{version} to {a_path}")
+    with a_path.open("w") as f:
+        yaml.dump(api_dict, f, default_flow_style=False)
 
 
 def merge_dicts(dict1, dict2):

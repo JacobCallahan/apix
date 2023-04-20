@@ -1,9 +1,6 @@
-# -*- encoding: utf-8 -*-
 """Explore and API and save the results."""
-import aiofiles
 import aiohttp
 import asyncio
-import async_timeout
 import attr
 import requests
 import time
@@ -22,8 +19,8 @@ class AsyncExplorer:
     parser = attr.ib(default=None)
     data_dir = attr.ib(default=None)
     compact = attr.ib(default=False)
-    _data = attr.ib(default={}, repr=False)
-    _queue = attr.ib(default=[], repr=False)
+    _data = attr.ib(default=attr.Factory(dict), repr=False)
+    _queue = attr.ib(default=attr.Factory(list), repr=False)
 
     def __attrs_post_init__(self):
         """perform the more complex steps of class initialization"""
@@ -117,12 +114,15 @@ class AsyncExplorer:
                 f"{self.host_url}{self.base_path}."
             )
             return
-        self.base_path = self.base_path.replace(".html", "")  # for next strep
+        self.base_path = self.base_path.replace(".html", "")  # for next step
         logger.info(f"Starting to explore {self.host_url}{self.base_path}")
-        links = self.parser.pull_links(result, self.base_path)
-        logger.debug(f"Found {len(links)} links!")
-        self._visit_links(links)
-        # sort the results by link name, to normalize return order
-        self._queue = sorted(self._queue, key=lambda x: x[0][1])
-        self._link_params()
+        if hasattr(self.parser, "pull_links"):
+            links = self.parser.pull_links(result, self.base_path)
+            logger.debug(f"Found {len(links)} links!")
+            self._visit_links(links)
+            # sort the results by link name, to normalize return order
+            self._queue = sorted(self._queue, key=lambda x: x[0][1])
+            self._link_params()
+        else:
+            self.parser.scrape_content(result)
         return True

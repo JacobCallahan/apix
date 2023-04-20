@@ -7,9 +7,8 @@ You can extend this functionality by creating your own parser class.
 
 Installation
 ------------
+Clone the APIx repository and install it with pip.
 ```pip install .```
-or
-```python setup.py install```
 
 
 Usage
@@ -25,9 +24,9 @@ If you don't specify a version, apix will save the results by date.
 
 ```apix explore --help```
 
-```apix explore -n satellite6 -u https://my.sathost.com/ -b apidoc/ -v 6.2.14 -p apipie```
+```apix explore -n satellite -u https://my.sathost.com/ -b apidoc/ -v 6.2.14 -p apipie```
 
-```apix explore -n satellite6 -u https://my.sathost.com/```
+```apix explore -n satellite -u https://my.sathost.com/```
 
 Version Diff
 ------------
@@ -39,11 +38,11 @@ By default it will use the most recently explored API and the latest known versi
 
 ```apix diff --help```
 
-```apix diff -n satellite6 -l 6.3 -p 6.2.14```
+```apix diff -n satellite -l 6.3 -p 6.2.14```
 
-```apix diff -n satellite6 -l 6.3```
+```apix diff -n satellite -l 6.3```
 
-```apix diff -n satellite6```
+```apix diff -n satellite```
 
 ```apix diff```
 
@@ -62,9 +61,9 @@ By default it will use the most recently explored API and the latest known versi
 
 ```apix makelib --help```
 
-```apix makelib -n satellite6 -v 6.3 -t nailgun```
+```apix makelib -n satellite -v 6.3 -t nailgun```
 
-```apix makelib -n satellite6 -t advanced```
+```apix makelib -n satellite -t advanced```
 
 ```apix makelib -t intermediate```
 
@@ -79,7 +78,7 @@ apix can also list out the APIs and versions for an API that is currently knows 
 
 ```apix list apis```
 
-```apix list versions -n satellite6```
+```apix list versions -n satellite```
 
 Docker
 ------
@@ -95,7 +94,7 @@ or
 
 ```docker run -it apix explore --help```
 
-```docker run -it -v $(pwd):/apix/:Z apix explore -n satellite6 -u https://my.sathost.com/ -v 6.2.14```
+```docker run -it -v $(pwd):/apix/:Z apix explore -n satellite -u https://my.sathost.com/ -v 6.2.14```
 
 Note
 ----
