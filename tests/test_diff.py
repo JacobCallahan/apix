@@ -1,7 +1,6 @@
-# -*- encoding: utf-8 -*-
 """Tests for apix.diff."""
 from pathlib import Path
-import pytest
+
 from apix import diff
 from apix.helpers import load_api
 

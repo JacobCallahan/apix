@@ -1,14 +1,15 @@
-# -*- encoding: utf-8 -*-
 """Main module for apix's interface."""
 import click
-from apix.explore import AsyncExplorer
+
+from apix import helpers, logger
 from apix.diff import VersionDiff
+from apix.explore import AsyncExplorer
 from apix.libtools.libmaker import LibMaker
-from apix import helpers
-from apix import logger
+
 
 def _version():
     import pkg_resources
+
     return pkg_resources.get_distribution("apix").version
 
 
@@ -75,6 +76,7 @@ def cli():
     is_flag=True,
     help="Strip all the extra information from the saved data.",
 )
+# (too-many-arguments)
 def explore(api_name, host_url, base_path, version, parser, data_dir, compact):
     """Explore a target API and export the findings"""
     explorer = AsyncExplorer(

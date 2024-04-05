@@ -1,8 +1,8 @@
-# -*- encoding: utf-8 -*-
 """This module provides the capability to create a new nailgun version."""
+
 import attr
-from pathlib import Path
 from logzero import logger
+
 from apix import helpers
 from apix.libtools import advanced, basic, intermediate, nailgun
 

@@ -1,7 +1,4 @@
-# -*- encoding: utf-8 -*-
 """Tests for apix.diff."""
-from pathlib import Path
-import pytest
 from apix.helpers import load_api
 from apix.libtools import nailgun
 
@@ -64,8 +61,7 @@ def test_positive_get_field_type():
 def test_positive_arg_override():
     assert nailgun.EntityMaker.arg_override("Location", "Environment") == "Environment"
     assert (
-        nailgun.EntityMaker.arg_override("ActivationKey", "Environment")
-        == "LifecycleEnvironment"
+        nailgun.EntityMaker.arg_override("ActivationKey", "Environment") == "LifecycleEnvironment"
     )
     assert nailgun.EntityMaker.arg_override("Something", "Else") == "Else"
 

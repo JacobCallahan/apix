@@ -1,7 +1,7 @@
-# -*- encoding: utf-8 -*-
 """This module provides the capability to create a new nailgun version."""
-import attr
 from pathlib import Path
+
+import attr
 from logzero import logger
 
 
@@ -48,18 +48,12 @@ class EntityMaker:
                         clean_name = value.split("~")[0].strip()
                         if clean_name == "id":
                             continue  # we don't want to use the id field here
-                        if (
-                            "_ids" in clean_name
-                            and clean_name.replace("_ids", "") in names
-                        ):
+                        if "_ids" in clean_name and clean_name.replace("_ids", "") in names:
                             # The name_id should take the final slot
                             index = names.index(clean_name.replace("_ids", ""))
                             names[index] = clean_name
                             param_list[index] = value
-                        elif (
-                            "_id" in clean_name
-                            and clean_name.replace("_id", "") in names
-                        ):
+                        elif "_id" in clean_name and clean_name.replace("_id", "") in names:
                             # The name_id should take the final slot
                             index = names.index(clean_name.replace("_id", ""))
                             names[index] = clean_name
@@ -69,20 +63,18 @@ class EntityMaker:
                             index = names.index(clean_name)
                             names[index] = clean_name
                             param_list[index] = value
-                        elif (
-                            clean_name not in names and clean_name + "_id" not in names
-                        ):
+                        elif clean_name not in names and clean_name + "_id" not in names:
                             names.append(clean_name)
                             param_list.append(value)
         return sorted(param_list)
 
     @staticmethod
-    def get_field_type(params):
-        """ there are a number of cases that aren't explicitly covered here.
+    def get_field_type(params):  # noqa: PLR0912 - Too many branches
+        """there are a number of cases that aren't explicitly covered here.
         In that case, we just give it a string and see what happens.
         I've currently not deternined a time to use FloatField."""
         params = params.lower()
-        name = [piece.strip() for piece in params.split("~")][0]
+        name = next(piece.strip() for piece in params.split("~"))
         if name[-3:] == "_id":
             return "OneToOneField"
         if name[-4:] == "_ids":
@@ -121,9 +113,12 @@ class EntityMaker:
     @staticmethod
     def arg_override(entity_name, field_entity):
         """In some parts of Sat6's API some params refer to another entity"""
-        if field_entity == "Environment":
-            if entity_name not in ["ContentViewVersion", "Location", "Organization"]:
-                field_entity = "LifecycleEnvironment"
+        if field_entity == "Environment" and entity_name not in [
+            "ContentViewVersion",
+            "Location",
+            "Organization",
+        ]:
+            field_entity = "LifecycleEnvironment"
         return field_entity
 
     def get_method_paths(self, entity_name):
@@ -150,7 +145,7 @@ class EntityMaker:
         returns
         'content_view': entity_fields.OneToOneField(ContentView, length=(2, 128))
         """
-        name, required, validator = [piece.strip() for piece in param.split("~")]
+        name, required, validator = (piece.strip() for piece in param.split("~"))
         required = "required=True" if required == "required" else None
         if " from " in validator:
             # get the length arg length=(6, 12),
@@ -190,7 +185,7 @@ class EntityMaker:
         ent_temp_f = Path("libs/templates/nailgun/entity_method.template")
         if not ent_temp_f.exists():
             logger.error(f"Unable to find {ent_temp_f.absolute()}.")
-            return
+            return None
         loaded_template = None
         with ent_temp_f.open("r+") as f_load:
             loaded_template = f_load.read()
@@ -199,7 +194,7 @@ class EntityMaker:
         method_names = list(method_paths.keys())
         http_methods = [path[0].split()[0] for path in method_paths.values()]
         compiled_template = ""
-        for name, http_method in zip(method_names, http_methods):
+        for name, http_method in zip(method_names, http_methods, strict=True):
             temp_late = loaded_template  # hahaha get it?!
             temp_late = temp_late.replace("~~method name~~", name)
             temp_late = temp_late.replace("~~http method~~", http_method.lower())
@@ -228,15 +223,13 @@ class EntityMaker:
                 for method, path in method_paths.items()
             ]
         )
-        method_names = ",\n                ".join(
-            f"'{name}'" for name in method_paths.keys()
-        )
+        method_names = ",\n                ".join(f"'{name}'" for name in method_paths)
 
         # load the template
         ent_temp_f = Path("libs/templates/nailgun/entity_class.template")
         if not ent_temp_f.exists():
             logger.error(f"Unable to find {ent_temp_f.absolute()}.")
-            return
+            return None
         loaded_t = None
         with ent_temp_f.open("r+") as f_load:
             loaded_t = f_load.read()
@@ -248,10 +241,9 @@ class EntityMaker:
         loaded_t = loaded_t.replace("~~base path~~", base_path)
         loaded_t = loaded_t.replace("~~methods paths~~", methods_paths)
         loaded_t = loaded_t.replace("~~method names~~", method_names)
-        loaded_t = loaded_t.replace(
+        return loaded_t.replace(
             "~~entity methods~~", self.fill_method_template(proper_name, method_paths)
         )
-        return loaded_t
 
     def create_entities_file(self):
         """Populate an entities.py with filled entity templates"""
@@ -267,9 +259,7 @@ class EntityMaker:
         loaded_ent_f = None
         with entities_file.open("r+") as ent_file:
             loaded_ent_f = ent_file.read()
-        loaded_ent_f = loaded_ent_f.replace(
-            "~~generated entity classes~~", all_entity_templates
-        )
+        loaded_ent_f = loaded_ent_f.replace("~~generated entity classes~~", all_entity_templates)
 
         save_file = Path(f"libs/generated/nailgun/{self.api_version}/entities.py")
         if save_file.exists():

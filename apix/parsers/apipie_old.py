@@ -1,4 +1,3 @@
-# -*- encoding: utf-8 -*-
 """
 Provides a class with methods that parse the api correctly.
 
@@ -66,15 +65,11 @@ class OldAPIPie:
         """pull the paths and parameters from the h1 and tables on the page"""
         tree = html.fromstring(content)
         paths = tree.xpath("//h1")
-        path_list = []
-        for path in paths:
-            path_list.append(path.text.replace("\n      ", ""))
+        path_list = [path.text.replace("\n      ", "") for path in paths]
         params = tree.xpath("//table/tbody/tr")
         param_list = []
         for param in params:
-            temp_list = [
-                x for x in param.text_content().replace("  ", "").split("\n") if x
-            ]
+            temp_list = [x for x in param.text_content().replace("  ", "").split("\n") if x]
             param_list.append(temp_list[:2])
             # If there is a validation, include it in the results
             if "Validations:" in temp_list:
