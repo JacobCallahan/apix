@@ -1,8 +1,8 @@
-# -*- encoding: utf-8 -*-
 """Module handling internal and dependency logging."""
 import logging
-import urllib3
+
 import logzero
+import urllib3
 
 
 def setup_logzero(level="info", path="logs/apix.log"):
@@ -25,9 +25,7 @@ def setup_logzero(level="info", path="logs/apix.log"):
     formatter = logzero.LogFormatter(fmt=log_fmt)
     logzero.setup_default_logger(formatter=formatter)
     logzero.loglevel(level)
-    logzero.logfile(
-        path, loglevel=level, maxBytes=1e9, backupCount=3, formatter=formatter
-    )
+    logzero.logfile(path, loglevel=level, maxBytes=1e9, backupCount=3, formatter=formatter)
 
 
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)

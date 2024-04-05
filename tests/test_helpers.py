@@ -1,7 +1,4 @@
-# -*- encoding: utf-8 -*-
 """Tests for apix.helpers."""
-from pathlib import Path
-import pytest
 from apix import helpers
 
 
@@ -31,10 +28,7 @@ def test_negative_get_latest():
 
 
 def test_positive_get_previous():
-    assert (
-        helpers.get_previous("test123", version="2.1", data_dir="./", mock=True)
-        == "1.3"
-    )
+    assert helpers.get_previous("test123", version="2.1", data_dir="./", mock=True) == "1.3"
 
 
 def test_negative_get_previous():
@@ -42,15 +36,11 @@ def test_negative_get_previous():
 
 
 def test_positive_load_api():
-    loaded = helpers.load_api(
-        api_name="test123", version="2.1", data_dir="./", mock=True
-    )
+    loaded = helpers.load_api(api_name="test123", version="2.1", data_dir="./", mock=True)
     assert loaded
     assert isinstance(loaded, dict)
     assert "entity_one" in loaded
 
 
 def test_negative_load_api():
-    assert not helpers.load_api(
-        api_name="test123", version="3.9", data_dir="./", mock=True
-    )
+    assert not helpers.load_api(api_name="test123", version="3.9", data_dir="./", mock=True)

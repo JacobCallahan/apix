@@ -1,9 +1,10 @@
-# -*- encoding: utf-8 -*-
 """This module provides the capability to create an intermediate interaction library."""
-import attr
 import builtins
 from pathlib import Path
+
+import attr
 from logzero import logger
+
 from apix.helpers import shift_text
 
 
@@ -42,7 +43,7 @@ class EntityMaker:
         """
         compiled_params = []
         for param in param_list:
-            name, *_ = [_.strip() for _ in param.split("~")]
+            name, *_ = (_.strip() for _ in param.split("~"))
             if "[" not in name:
                 compiled_params.append(name)
         return compiled_params
@@ -89,7 +90,7 @@ class EntityMaker:
         ent_temp_f = Path("libs/templates/intermediate/method.template")
         if not ent_temp_f.exists():
             logger.error(f"Unable to find {ent_temp_f.absolute()}.")
-            return
+            return None
         loaded_template = None
         with ent_temp_f.open("r+") as f_load:
             loaded_template = f_load.read()
@@ -99,9 +100,7 @@ class EntityMaker:
         for method in methods:
             for method_name, contents in method.items():
                 temp_late = loaded_template  # hahaha get it?!
-                temp_late = temp_late.replace(
-                    "~~method_name~~", self.fix_name(method_name)
-                )
+                temp_late = temp_late.replace("~~method_name~~", self.fix_name(method_name))
                 temp_late = temp_late.replace(
                     "~~param_list~~", str(self.compile_params(contents["parameters"]))
                 )
@@ -119,23 +118,18 @@ class EntityMaker:
         ent_temp_f = Path("libs/templates/intermediate/class.template")
         if not ent_temp_f.exists():
             logger.error(f"Unable to find {ent_temp_f.absolute()}.")
-            return
+            return None
         loaded_t = None
         with ent_temp_f.open("r+") as f_load:
             loaded_t = f_load.read()
 
         # fill the template
         loaded_t = loaded_t.replace("~~FeatureName~~", class_name)
-        loaded_t = loaded_t.replace(
-            "~~ProductName~~", self.name_to_class(self.api_name)
-        )
-        loaded_t = loaded_t.replace(
+        loaded_t = loaded_t.replace("~~ProductName~~", self.name_to_class(self.api_name))
+        return loaded_t.replace(
             "~~class methods~~",
-            shift_text(
-                self.fill_method_template(class_name, self.api_dict[entity]["methods"])
-            ),
+            shift_text(self.fill_method_template(class_name, self.api_dict[entity]["methods"])),
         )
-        return loaded_t
 
     def create_entities_file(self):
         """Populate an entities.py with filled entity templates"""
@@ -151,14 +145,10 @@ class EntityMaker:
         loaded_ent_f = None
         with entities_file.open("r+") as ent_file:
             loaded_ent_f = ent_file.read()
-        loaded_ent_f = loaded_ent_f.replace(
-            "~~ProductName~~", self.name_to_class(self.api_name)
-        )
+        loaded_ent_f = loaded_ent_f.replace("~~ProductName~~", self.name_to_class(self.api_name))
         loaded_ent_f = loaded_ent_f.replace("~~feature classes~~", all_entity_templates)
 
-        save_file = Path(
-            f"libs/generated/intermediate/{self.api_version}/{self.api_name}.py"
-        )
+        save_file = Path(f"libs/generated/intermediate/{self.api_version}/{self.api_name}.py")
         if save_file.exists():
             logger.warning(f"Overwriting {save_file}")
             save_file.unlink()

@@ -1,4 +1,3 @@
-# -*- encoding: utf-8 -*-
 """
 Provides a class with methods that parse the api correctly.
 
@@ -10,7 +9,6 @@ Parser classes must currently implement the following methods:
 https://www.google.com/search?q=apix
 """
 import attr
-from logzero import logger
 from lxml import html
 
 
@@ -47,12 +45,7 @@ class TestParser:
         links, last = [], None
         for link in g_links:
             url = link[2].replace("../", "")
-            if (
-                "JacobCallahan" in url
-                and "sparkline" not in url
-                and link[0].text
-                and url != last
-            ):
+            if "JacobCallahan" in url and "sparkline" not in url and link[0].text and url != last:
                 links.append((link[0].text, url))
                 last = url
         return links
@@ -62,8 +55,5 @@ class TestParser:
         """take the title text from a page, if it exists"""
         tree = html.fromstring(content)
         title = tree.xpath("//head/title")
-        if title:
-            title = title[0].text
-        else:
-            title = "This page had no title for some reason"
+        title = title[0].text if title else "This page had no title for some reason"
         return [x.strip() for x in title.split() if x]

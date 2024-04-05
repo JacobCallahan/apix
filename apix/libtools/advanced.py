@@ -1,9 +1,10 @@
-# -*- encoding: utf-8 -*-
 """This module provides the capability to create an advanced interaction library."""
-import attr
 import builtins
 from pathlib import Path
+
+import attr
 from logzero import logger
+
 from apix.helpers import merge_dicts, shift_text
 
 
@@ -30,11 +31,11 @@ class EntityMaker:
 
     @staticmethod
     def get_field_type(params):
-        """ there are a number of cases that aren't explicitly covered here.
+        """there are a number of cases that aren't explicitly covered here.
         In that case, we just give it a string and see what happens.
         I've currently not deternined a time to use FloatField."""
         params = params.lower()
-        name = [piece.strip() for piece in params.split("~")][0]
+        name = next(piece.strip() for piece in params.split("~"))
         if name[-3:] == "_id":
             return "entity"
         if name[-4:] == "_ids":
@@ -68,7 +69,7 @@ class EntityMaker:
         Example: cname  ~ required ~ Must be ... string from 1 to 128 characters
         Output: {"cname": {"required": True, "type": "alpha#15"}
         """
-        name, required, specs = [_.strip() for _ in param_string.split("~")]
+        name, required, specs = (_.strip() for _ in param_string.split("~"))
         required = required == "required"
         ptype = EntityMaker.get_field_type(specs)
         if " characters " in param_string:
@@ -77,9 +78,7 @@ class EntityMaker:
                 max_len = int(split_param[split_param.index("characters") - 1])
                 max_len = int(max_len / 2)  # let's not get too crazy
             except ValueError:
-                logger.warning(
-                    f"Unable to determine max length for {param_string}. Using 15."
-                )
+                logger.warning(f"Unable to determine max length for {param_string}. Using 15.")
                 max_len = 15  # if it isn't where expected, then assign a sane value
             ptype = f"{ptype}#{max_len}"
         return {name: {"required": required, "type": ptype}}
@@ -94,10 +93,7 @@ class EntityMaker:
         """
         if len(name_list) > 1:
             return {name_list[0]: EntityMaker.make_dict(name_list[1:], required, specs)}
-        else:
-            return EntityMaker.format_parameter(
-                f"{name_list[0]} ~ {required} ~ {specs}"
-            )
+        return EntityMaker.format_parameter(f"{name_list[0]} ~ {required} ~ {specs}")
 
     @staticmethod
     def compile_params(param_list):
@@ -114,7 +110,7 @@ class EntityMaker:
         """
         compiled_params = {}
         for param in param_list:
-            name, *required, specs = [_.strip() for _ in param.split("~")]
+            name, *required, specs = (_.strip() for _ in param.split("~"))
             if not required:
                 logger.warning(f"Expected parameter for required in: {param}")
                 required = ["optional"]
@@ -166,7 +162,7 @@ class EntityMaker:
         ent_temp_f = Path("libs/templates/advanced/method.template")
         if not ent_temp_f.exists():
             logger.error(f"Unable to find {ent_temp_f.absolute()}.")
-            return
+            return None
         loaded_template = None
         with ent_temp_f.open("r+") as f_load:
             loaded_template = f_load.read()
@@ -176,9 +172,7 @@ class EntityMaker:
         for method in methods:
             for method_name, contents in method.items():
                 temp_late = loaded_template  # hahaha get it?!
-                temp_late = temp_late.replace(
-                    "~~method_name~~", self.fix_name(method_name)
-                )
+                temp_late = temp_late.replace("~~method_name~~", self.fix_name(method_name))
                 temp_late = temp_late.replace(
                     "~~param_dict~~", str(self.compile_params(contents["parameters"]))
                 )
@@ -196,23 +190,18 @@ class EntityMaker:
         ent_temp_f = Path("libs/templates/advanced/class.template")
         if not ent_temp_f.exists():
             logger.error(f"Unable to find {ent_temp_f.absolute()}.")
-            return
+            return None
         loaded_t = None
         with ent_temp_f.open("r+") as f_load:
             loaded_t = f_load.read()
 
         # fill the template
         loaded_t = loaded_t.replace("~~FeatureName~~", class_name)
-        loaded_t = loaded_t.replace(
-            "~~ProductName~~", self.name_to_class(self.api_name)
-        )
-        loaded_t = loaded_t.replace(
+        loaded_t = loaded_t.replace("~~ProductName~~", self.name_to_class(self.api_name))
+        return loaded_t.replace(
             "~~class methods~~",
-            shift_text(
-                self.fill_method_template(class_name, self.api_dict[entity]["methods"])
-            ),
+            shift_text(self.fill_method_template(class_name, self.api_dict[entity]["methods"])),
         )
-        return loaded_t
 
     def create_entities_file(self):
         """Populate an entities.py with filled entity templates"""
@@ -228,14 +217,10 @@ class EntityMaker:
         loaded_ent_f = None
         with entities_file.open("r+") as ent_file:
             loaded_ent_f = ent_file.read()
-        loaded_ent_f = loaded_ent_f.replace(
-            "~~ProductName~~", self.name_to_class(self.api_name)
-        )
+        loaded_ent_f = loaded_ent_f.replace("~~ProductName~~", self.name_to_class(self.api_name))
         loaded_ent_f = loaded_ent_f.replace("~~feature classes~~", all_entity_templates)
 
-        save_file = Path(
-            f"libs/generated/advanced/{self.api_version}/{self.api_name}.py"
-        )
+        save_file = Path(f"libs/generated/advanced/{self.api_version}/{self.api_name}.py")
         if save_file.exists():
             logger.warning(f"Overwriting {save_file}")
             save_file.unlink()

@@ -1,6 +1,4 @@
-# -*- encoding: utf-8 -*-
 """Tests for apix.explore"""
-import pytest
 from apix import explore
 
 

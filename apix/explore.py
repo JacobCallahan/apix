@@ -1,12 +1,14 @@
 """Explore and API and save the results."""
-import aiohttp
 import asyncio
-import attr
-import requests
-import time
-import yaml
-from logzero import logger
 from pathlib import Path
+import time
+
+import aiohttp
+import attr
+from logzero import logger
+import requests
+import yaml
+
 from apix.parsers import apipie, test
 
 
@@ -57,11 +59,9 @@ class AsyncExplorer:
         try:
             loop = asyncio.get_event_loop()
             loop.run_until_complete(self._async_loop(links))
-        except aiohttp.client_exceptions.ServerDisconnectedError as err:
+        except aiohttp.client_exceptions.ServerDisconnectedError:
             logger.warning(
-                "Lost connection to host.{}".join(
-                    "Retrying in 10 seconds" if retries else ""
-                )
+                "Lost connection to host.{}".join("Retrying in 10 seconds" if retries else "")
             )
             if retries:
                 time.sleep(10)
@@ -79,7 +79,7 @@ class AsyncExplorer:
         yaml_data = self.parser.yaml_format(self._data)
         if not yaml_data:
             logger.warning("No data to be saved. Exiting.")
-            return
+            return None
 
         if self.compact:
             from apix.diff import VersionDiff
@@ -110,10 +110,9 @@ class AsyncExplorer:
         result = requests.get(self.host_url + self.base_path, verify=False)
         if not result:
             logger.warning(
-                f"I couldn't find anything useful at "
-                f"{self.host_url}{self.base_path}."
+                f"I couldn't find anything useful at " f"{self.host_url}{self.base_path}."
             )
-            return
+            return None
         self.base_path = self.base_path.replace(".html", "")  # for next step
         logger.info(f"Starting to explore {self.host_url}{self.base_path}")
         if hasattr(self.parser, "pull_links"):

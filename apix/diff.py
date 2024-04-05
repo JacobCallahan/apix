@@ -1,9 +1,10 @@
-# -*- encoding: utf-8 -*-
 """Determine the changes between two API versions."""
-import attr
-import yaml
 from pathlib import Path
+
+import attr
 from logzero import logger
+import yaml
+
 from apix.helpers import get_latest, get_previous, load_api
 
 
@@ -23,9 +24,7 @@ class VersionDiff:
             self.api_name = get_latest(data_dir=self.data_dir, mock=self.mock)
         if not self.ver1:
             # get the latest saved version
-            self.ver1 = get_latest(
-                api_name=self.api_name, data_dir=self.data_dir, mock=self.mock
-            )
+            self.ver1 = get_latest(api_name=self.api_name, data_dir=self.data_dir, mock=self.mock)
         if not self.ver2:
             # get the version before ver1
             self.ver2 = get_previous(self.api_name, self.ver1, self.data_dir, self.mock)
@@ -37,7 +36,7 @@ class VersionDiff:
         for parent, children in diff_dict.items():
             compact_diff[parent] = []
             for meth in children["methods"]:
-                compact_diff[parent].append(list(meth.keys())[0])
+                compact_diff[parent].append(next(iter(meth.keys())))
         return compact_diff
 
     def _dict_diff(self, dict1, dict2):
@@ -47,7 +46,7 @@ class VersionDiff:
             return added, changed
         for key, values in dict1.items():
             if key in dict2:
-                if not values == dict2[key]:
+                if values != dict2[key]:
                     if isinstance(values, dict):
                         res, chng = self._dict_diff(values, dict2[key])
                         if res:
@@ -68,7 +67,7 @@ class VersionDiff:
                 added[key] = values
         return added, changed
 
-    def _list_diff(self, list1, list2):
+    def _list_diff(self, list1, list2):  # noqa: PLR0912 (allowing for deep nesting)
         """Recursively search a list for differences"""
         added, changed = [], []
         if list1 == list2:
@@ -107,20 +106,19 @@ class VersionDiff:
                 if not found:
                     logger.debug(f"Adding {item}")
                     added.append(item)
-            else:
-                if item not in list2:
-                    logger.debug(f"Adding {item}")
-                    added.append(item)
+            elif item not in list2:
+                logger.debug(f"Adding {item}")
+                added.append(item)
         return added, changed
 
     def diff(self):
         """Determine the diff between ver1 and ver2"""
         if not self.ver1:
             logger.warning("No ver1 API found.")
-            return None
+            return
         if not self.ver2:
             logger.warning("No ver2 API found.")
-            return None
+            return
         logger.info(f"Performing diff between {self.ver1} and {self.ver2}")
 
         ver1_content = load_api(self.api_name, self.ver1, self.data_dir, self.mock)
@@ -146,7 +144,7 @@ class VersionDiff:
         """Save the currently stored diff"""
         if not self._vdiff:
             logger.warning("No data to be saved. Exiting.")
-            return
+            return None
 
         if self.mock:
             fpath = Path(
