@@ -1,0 +1,237 @@
+# /// script
+# requires-python = ">=3.13"
+# dependencies = [
+#     "fauxfactory",
+#     "requests",
+# ]
+# ///
+from __future__ import annotations
+
+import inspect
+import json
+import os
+import sys
+from typing import types, Literal, get_args
+
+import fauxfactory
+import requests
+
+
+SESSION_ENTITIES = set()
+CONN: APIConnection = None
+
+class APIConnection:
+    """Before interacting with the API, you must create an instance of this class."""
+    def __init__(self, **kwargs):
+        self.hostname = kwargs.pop("hostname", os.environ.get("TARGET_HOST"))
+        self.base_path = f"https://{self.hostname}"
+        auth = tuple((kwargs.pop("auth", os.environ.get("TARGET_AUTH"))).split(":"))
+        self.headers = {
+            "auth": auth,
+            "timeout": 120.0,
+            "verify": False,
+            "headers": {"content-type": "application/json"},
+        }
+        self.request_methods = {
+            "GET": requests.get,
+            "POST": requests.post,
+            "PUT": requests.put,
+            "DELETE": requests.delete,
+        }
+        global CONN
+        CONN = self
+
+
+class ffTypes:
+    class Date:
+        ff_method = fauxfactory.gen_date
+
+    class Domain:
+        ff_method = fauxfactory.gen_domain
+
+    class IPAddress:
+        ff_method = fauxfactory.gen_ipaddr
+
+    class MACAddress:
+        ff_method = fauxfactory.gen_mac
+
+    class Time:
+        ff_method = fauxfactory.gen_time
+
+    class URL:
+        ff_method = fauxfactory.gen_url
+
+    class UUID:
+        ff_method = fauxfactory.gen_uuid
+
+
+def patch_methods(renamed_methods):
+    """
+    Decorator to handle Python reserved keywords in method names.
+
+    Args:
+        renamed_methods: Dictionary mapping reserved keywords to their renamed versions
+                        (e.g., {"global": "global_", "import": "import_"})
+
+    Returns:
+        A decorator that adds __getattr__ method to handle attribute lookup
+    """
+
+    def decorator(cls):
+        # Store the renamed methods mapping as a class attribute
+        cls._renamed_methods = renamed_methods
+
+        # Only create the __getattr__ method if it doesn't already exist
+        if not hasattr(cls, "__getattr__"):
+
+            def __getattr__(self, name):
+                # Check if the name is in our renamed methods dictionary
+                if name in self.__class__._renamed_methods:
+                    # Get the actual method name
+                    renamed = self.__class__._renamed_methods[name]
+                    # Return the renamed method
+                    return getattr(self, renamed)
+                # Let the standard attribute error be raised
+                raise AttributeError(f"{self.__class__.__name__} has no attribute '{name}'")
+
+            # Add the __getattr__ method to the class
+            cls.__getattr__ = __getattr__
+
+        return cls
+
+    return decorator
+
+
+class ~~ProductName~~:
+    def __init__(self, **kwargs):
+        if kwargs.pop("params", None):
+            caller_meth = inspect.currentframe()
+            self._fill_missing_parameters(caller_meth, self, params)
+        self._add_attr(kwargs)
+
+    def _add_attr(self, attributes):
+        if isinstance(attributes, dict):
+            for key, value in attributes.items():
+                setattr(self, key, value)
+
+    def _format_payload(self, payload=None):
+        if payload and not isinstance(payload, str):
+            try:
+                return json.dumps(payload)
+            except SyntaxError as err:
+                raise Exception(
+                    f"Error! Unable to format payload {payload}. Reverting to original value."
+                ) from err
+        return payload
+
+    def _create_dep(self, dep_type):
+        """Create a dependency based on the dependency type."""
+        # handle custom type annotations: MyClass["attr"]
+        if isinstance(dep_type, str):
+            parts = re.search(r"(\w+)\[['\"](\w+)['\"]\]", dep_type)
+            dep_type, attribute = MYCLASSES[parts.group(1)], parts.group(2)
+            d_inst = dep_type()
+            d_inst.create()
+            return getattr(d_inst, attribute, None)
+        # handle basic custom types: MyClass
+        if dep_type in MYCLASSES.values():
+            d_inst = dep_type()
+            d_inst.create()
+
+        # resolve simple types
+        if dep_type is bool:
+            return fauxfactory.gen_boolean()
+        if dep_type is int:
+            return fauxfactory.gen_number(min_value=1, max_value=10)
+        if dep_type is str:
+            return fauxfactory.gen_alpha()
+        if ff_func := getattr(fauxfactory, f"gen_{dep_type}", None):
+            return ff_func()
+        if dep_type == "date":
+            return fauxfactory.gen_date()
+
+        # handle Literal types
+        if hasattr(dep_type, "__origin__") and dep_type.__origin__ is Literal:
+            # Get the choices from the Literal type
+            choices = get_args(dep_type)
+            return fauxfactory.gen_choice(choices)
+
+        # We really should have returned by now
+        raise Exception(f"Do not know how to produce required parameter {dep_type}")
+
+    def _select_path(self, paths, params):
+        """Return the first matching (method, path) based on the params"""
+        if not isinstance(paths, list):
+            raise Exception(f"Expected paths to be list, got {paths}")
+        params = params if params else {}
+        for method, path in paths:
+            try:
+                path = path.format_map(params)
+                return method, path
+            except KeyError:
+                continue
+        return None, None
+
+    def _fill_missing_parameters(self, caller_method, caller_inst, params):
+        """Fill in missing parameters based on the caller's annotations."""
+        annotations = getattr(caller_method, "__annotations__", {})
+        caller_inst = caller_method.f_locals.get("self")
+        # iterate through the annotations and fill in missing required parameters
+        for name, spec in annotations.items():
+            if name in params or name == "self" or name == "return":
+                continue
+            if isinstance(spec, types.UnionType):
+                # There's a good chance it is a union with None, so we can skip it
+                if spec.__args__[-1] is None:
+                    continue
+                raise ValueError(f"Union type {spec} is not supported for {name}")
+            elif isinstance(spec, str) and spec.endswith("None"):  # Custom annotation
+                continue
+
+            # Skip adding the actual type objects to params
+            if spec is type or isinstance(spec, type):
+                continue
+
+            # If the type is a normal type or class
+            # get it from the caller's instance or create a new one
+            params[name] = getattr(caller_inst, name, self._create_dep(spec))
+
+    def _request(self, params):
+        if not isinstance(CONN, APIConnection):
+            raise Exception("APIConnection must be initialized before using ~~ProductName~~ classes.")
+        paths = params.pop("paths")
+        caller_inst = params.pop("self")
+        caller_meth = inspect.currentframe().f_back
+        self._fill_missing_parameters(caller_meth, caller_inst, params)
+        method, path = self._select_path(paths, params)
+        if not path:
+            raise Exception(f"No suitable paths found for {params}. Available: {paths.values()}")
+        path = CONN.base_path + path
+        payload = self._format_payload(params)
+        result = CONN.request_methods[method](url=path, data=payload, **CONN.headers)
+        if result.ok:
+            caller_inst._add_attr(result.json().get("result", result.json()))
+        if caller_meth.__name__ == "create":
+            SESSION_ENTITIES.add(caller_inst)
+        return result
+
+    def clean_session(self, max_attempts=5):
+        attempt = 1
+        while SESSION_ENTITIES and attempt <= max_attempts:
+            for entity in SESSION_ENTITIES:
+                try:
+                    if entity.delete().ok:
+                        SESSION_ENTITIES.remove(entity)
+                except Exception as e:
+                    pass  # Ignore errors until we run out of attempts
+            attempt += 1
+        if SESSION_ENTITIES:
+            print(f"Some session entities could not be deleted: {SESSION_ENTITIES}")
+
+
+~~feature classes~~
+
+MYCLASSES = {
+    name: obj for name, obj in inspect.getmembers(sys.modules[__name__])
+    if inspect.isclass(obj) and ~~ProductName~~ in obj.mro()
+}

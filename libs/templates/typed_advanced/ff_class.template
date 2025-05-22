@@ -1,0 +1,2 @@
+class ~~ff_type~~:
+        ff_method = fauxfactory.~~ff_method~~

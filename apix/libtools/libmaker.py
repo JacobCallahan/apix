@@ -4,9 +4,10 @@ import attr
 from logzero import logger
 
 from apix import helpers
-from apix.libtools import advanced, basic, intermediate, nailgun
+from apix.libtools import advanced, basic, intermediate, nailgun, typed
 
 TEMPLATE_MAKERS = {
+    "typed": typed.TypedMaker,
     "advanced": advanced.AdvancedMaker,
     "basic": basic.BasicMaker,
     "intermediate": intermediate.IntermediateMaker,

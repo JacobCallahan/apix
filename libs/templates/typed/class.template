@@ -1,0 +1,6 @@
+class ~~FeatureName~~(~~ProductName~~):
+    def __init__(self, ~~init_params~~):
+        params = {k: v for k, v in locals().items() if k not in ("self", "__class__") and v}
+        super().__init__(**params)
+
+~~class methods~~

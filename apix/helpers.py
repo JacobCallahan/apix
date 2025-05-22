@@ -1,5 +1,7 @@
 """A collection of miscellaneous helpers that don't quite fit in."""
+
 from copy import deepcopy
+import html
 from pathlib import Path
 
 from logzero import logger
@@ -104,3 +106,18 @@ def merge_dicts(dict1, dict2):
     for key in dict2.keys() - dupe_keys:
         merged[key] = deepcopy(dict2[key])
     return merged
+
+
+def clean_string(string):
+    """Clean a string by removing html tags and unescaping"""
+    if not string:
+        return ""
+    # unescape html tags
+    string = html.unescape(string)
+    # remove html tags
+    for tag in ("p", "code"):
+        string = string.replace(f"<{tag}>", "")
+        string = string.replace(f"</{tag}>", "")
+    # remove newlines
+    string = string.replace("\n", " ")
+    return string.strip()

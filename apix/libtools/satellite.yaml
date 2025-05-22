@@ -1,0 +1,26 @@
+# Special mappings for Satellite/Foreman API entity types
+# These map parameter names to their corresponding API entities
+
+special_mappings:
+  medium: "media"
+  ptable: "ptables"
+  smart_proxy: "smart_proxies"
+  environment: "lifecycle_environments"
+  operatingsystem: "operatingsystems"
+  template: "templates"
+  provisioning_template: "provisioning_templates"
+  content_view_version: "content_view_versions"
+  filter: "filters"
+  repository: "repositories"
+  location: "locations"
+  organization: "organizations"
+  host: "hosts"
+  hostgroup: "hostgroups"
+  domain: "domains"
+  realm: "realms"
+  compute_resource: "compute_resources"
+  subnet: "subnets"
+  user: "users"
+  component: "content_view_components"
+  module_stream: "module_streams"
+  rule: "content_view_filter_rules"
