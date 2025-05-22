@@ -8,9 +8,7 @@ description = "API Explorer: Discover, Track, Test."
 readme = "README.md"
 requires-python = ">=3.10"
 keywords = ["apix", "api", "explorer", "discovery", "tracking", "testing"]
-authors = [
-    {name = "Jacob J Callahan", email = "jacob.callahan05@gmail.com"}
-]
+authors = [{ name = "Jacob J Callahan", email = "jacob.callahan05@gmail.com" }]
 classifiers = [
     "Development Status :: 4 - Beta",
     "Intended Audience :: Developers",
@@ -38,12 +36,7 @@ dynamic = ["version"]
 Repository = "https://github.com/JacobCallahan/apix"
 
 [project.optional-dependencies]
-dev = [
-    "pre-commit",
-    "pytest",
-    "pytest-randomly",
-    "ruff"
-]
+dev = ["pre-commit", "pytest", "pytest-randomly", "ruff"]
 
 [project.scripts]
 apix = "apix.commands:cli"
@@ -56,7 +49,7 @@ include-package-data = true
 [tool.setuptools.packages.find]
 include = ["apix"]
 
-[tool.setuptools_scm]  # same as use_scm_version=True in setup.py
+[tool.setuptools_scm] # same as use_scm_version=True in setup.py
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
@@ -69,39 +62,36 @@ target-version = "py311"
 [tool.ruff.lint]
 fixable = ["ALL"]
 select = [
-    "B",  # bugbear
-    "C90", # mccabe
-    "E",  # pycodestyle
-    "F",  # flake8
-    "G", # flake8-logging-format
-    "I", # isort
+    "B",    # bugbear
+    "C90",  # mccabe
+    "E",    # pycodestyle
+    "F",    # flake8
+    "G",    # flake8-logging-format
+    "I",    # isort
     "PERF", # Perflint rules
-    "PLC", # pylint
-    "PLE", # pylint
-    "PLR", # pylint
-    "PLW", # pylint
-    "PTH", # Use pathlib
-    "PT",  # flake8-pytest
+    "PLC",  # pylint
+    "PLE",  # pylint
+    "PLR",  # pylint
+    "PLW",  # pylint
+    "PTH",  # Use pathlib
+    "PT",   # flake8-pytest
     "RET",  # flake8-return
-    "RUF", # Ruff-specific rules
+    "RUF",  # Ruff-specific rules
     "SIM",  # flake8-simplify
-    "UP",  # pyupgrade
-    "W",  # pycodestyle
+    "UP",   # pyupgrade
+    "W",    # pycodestyle
 ]
 ignore = [
-    "B019",  # lru_cache can lead to memory leaks - acceptable tradeoff
+    "B019",    # lru_cache can lead to memory leaks - acceptable tradeoff
     "PLR0911", # too many return statements - acceptable tradeoff
     "PLR0913", # too many arguments in function call - acceptable tradeoff
-    "PT004", # pytest underscrore prefix for non-return fixtures
-    "PT005", # pytest no underscrore prefix for return fixtures
-    "RET503", # missing explicit return
+    "RET503",  # missing explicit return
+    "RUF012",  # Mutable class attributes should be annotated with typing.ClassVar
 ]
 
 [tool.ruff.lint.isort]
 force-sort-within-sections = true
-known-first-party = [
-    "apix",
-]
+known-first-party = ["apix"]
 combine-as-imports = true
 
 [tool.ruff.lint.flake8-pytest-style]

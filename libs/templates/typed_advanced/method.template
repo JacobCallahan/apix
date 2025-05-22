@@ -1,0 +1,5 @@
+def ~~method_name~~(self, ~~typed_parameters~~):
+    paths = ~~path_list~~~~id_snip_if_needed~~
+    params = {k: v for k, v in locals().items() if k[0] != "_" and v is not None}
+    return super()._request(params)
+

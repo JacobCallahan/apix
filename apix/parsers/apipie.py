@@ -9,6 +9,8 @@ Parser classes must currently implement the following methods:
 import attr
 from logzero import logger
 
+from apix.helpers import clean_string
+
 
 @attr.s()
 class APIPie:
@@ -18,17 +20,32 @@ class APIPie:
     params = attr.ib(default=attr.Factory(dict), repr=False)
 
     @staticmethod
+    def _compile_params(params, parent=None):
+        """Compile the params into a list of strings"""
+        compiled = []
+        for param in params:
+            status = "optional"
+            if param["deprecated"]:
+                status = "deprecated"
+            elif param["required"]:
+                status = "required"
+            if parent:
+                param["name"] = f"{parent}[{param['name']}]"
+            compiled.append(
+                f'{param["name"]} ~ {status} ~ {clean_string(param["validator"]).lower()}'
+            )
+            # some params have nested parameters, so we recurse to get them
+            if param.get("params"):
+                compiled.extend(APIPie._compile_params(param["params"], parent=param["name"]))
+        return compiled
+
+    @staticmethod
     def _compile_method(method_dict):
         """form the parameters and paths lists"""
-        params = [
-            f'{param["name"]} ~ {"required" if param["required"] else "optional"}'
-            f' ~ {param["expected_type"]}'
-            for param in method_dict["params"]
-        ]
         paths = [
             f'{path["http_method"].upper()} {path["api_url"]}' for path in method_dict["apis"]
         ]
-        return {"paths": paths, "params": params}
+        return {"paths": paths, "params": APIPie._compile_params(method_dict["params"])}
 
     def scrape_content(self, result):
         """Compile the data into their corresponding classifications"""

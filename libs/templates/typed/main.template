@@ -1,0 +1,209 @@
+# /// script
+# requires-python = ">=3.13"
+# dependencies = [
+#     "fauxfactory",
+#     "requests",
+# ]
+# ///
+from __future__ import annotations
+
+import inspect
+import json
+import os
+import re
+import sys
+from typing import Literal
+
+import fauxfactory
+import requests
+
+
+SESSION_ENTITIES = set()
+CONN: APIConnection = None
+
+class APIConnection:
+    """Before interacting with the API, you must create an instance of this class."""
+    def __init__(self, **kwargs):
+        self.hostname = kwargs.pop("hostname", os.environ.get("TARGET_HOST"))
+        self.base_path = f"https://{self.hostname}"
+        auth = tuple((kwargs.pop("auth", os.environ.get("TARGET_AUTH"))).split(":"))
+        self.headers = {
+            "auth": auth,
+            "timeout": 120.0,
+            "verify": False,
+            "headers": {"content-type": "application/json"},
+        }
+        self.request_methods = {
+            "GET": requests.get,
+            "POST": requests.post,
+            "PUT": requests.put,
+            "DELETE": requests.delete,
+        }
+        global CONN
+        CONN = self
+
+
+class ffTypes:
+    ~~ff_type_classes~~
+
+
+def parse_annotations(annotations):
+    """Convert string type annotations to structured format with resolved types."""
+    result = {}
+    
+    for name, type_str in annotations.items():
+        required = "| None" not in type_str and "= None" not in type_str
+        
+        # Handle list[Entity.id] format
+        if match := re.search(r"list\[(\w+)\.(\w+)\]", type_str):
+            entity, attr = match.groups()
+            # Try to resolve entity class from any loaded module
+            entity_type = next((getattr(mod, entity) for mod_name, mod in sys.modules.items() 
+                              if hasattr(mod, entity)), entity)
+            result[name] = {"type": [{"type": entity_type, "attribute": attr}], "required": required}
+            continue
+            
+        # Handle Literal['val1', 'val2', ...] format
+        if match := re.search(r"Literal\[(.*?)\]", type_str):
+            result[name] = {"type": f"Literal[{match.group(1)}]", "required": required}
+            continue
+            
+        # Handle ffTypes.TypeName format
+        if match := re.search(r"ffTypes\.(\w+)", type_str):
+            result[name] = {"type": f"ffTypes.{match.group(1)}", "required": required}
+            continue
+            
+        # Handle standard Python types
+        base_type = type_str.split(" |")[0] if " | " in type_str else type_str
+        type_mapping = {"str": str, "int": int, "bool": bool, "list": list, "dict": dict}
+        
+        result[name] = {
+            "type": type_mapping.get(base_type, base_type),
+            "required": required
+        }
+    
+    return result
+
+
+def get_dependencies(annotations):
+    """Extract entity dependencies from parsed annotations."""
+    dependencies = []
+    
+    for name, info in annotations.items():
+        if isinstance(info["type"], list) and isinstance(info["type"][0], dict):
+            for item in info["type"]:
+                dependencies.append({
+                    "parameter": name,
+                    "entity_type": item["type"],
+                    "attribute": item["attribute"],
+                    "required": info["required"]
+                })
+    
+    return dependencies
+
+
+def patch_methods(renamed_methods):
+    """
+    Decorator to handle Python reserved keywords in method names.
+
+    example: @patch_methods({"global": "global_", "import": "import_"})
+    """
+
+    def decorator(cls):
+        # Store the renamed methods mapping as a class attribute
+        cls._renamed_methods = renamed_methods
+        if not hasattr(cls, "__getattr__"):
+            def __getattr__(self, name):
+                # Check if the name is in our renamed methods dictionary
+                if name in self.__class__._renamed_methods:
+                    # Get the actual method name
+                    renamed = self.__class__._renamed_methods[name]
+                    return getattr(self, renamed)
+                raise AttributeError(f"{self.__class__.__name__} has no attribute '{name}'")
+            cls.__getattr__ = __getattr__
+        return cls
+    return decorator
+
+
+class ~~ProductName~~:
+    def __init__(self, **kwargs):
+        self._add_attr(kwargs)
+
+    def _add_attr(self, attributes):
+        if isinstance(attributes, dict):
+            for key, value in attributes.items():
+                setattr(self, key, value)
+
+    def _format_payload(self, payload=None):
+        if isinstance(payload, dict):
+            payload = {
+                k: v._to_dict() if isinstance(v, ~~ProductName~~) else v
+                for k, v in payload.items()
+                if not k.startswith("_") and v is not None
+            }
+            try:
+                return json.dumps(payload)
+            except (TypeError, ValueError) as err:
+                raise Exception(
+                    f"Error! Unable to format payload {payload}. Reverting to original value."
+                ) from err
+        return payload
+
+    def _select_path(self, paths, params):
+        """Return the first matching (method, path) based on the params"""
+        if not isinstance(paths, list):
+            raise Exception(f"Expected paths to be list, got {paths}")
+        params = params if params else {}
+        for method, path in paths:
+            try:
+                path = path.format_map(params)
+                return method, path
+            except KeyError:
+                continue
+        return None, None
+
+    def _request(self, params):
+        if not isinstance(CONN, APIConnection):
+            raise Exception("APIConnection must be initialized before using Satellite classes.")
+        paths = params.pop("paths")
+        method, path = self._select_path(paths, params)
+        if not path:
+            raise Exception(f"No suitable paths found for {params}. Available: {paths.values()}")
+        path = CONN.base_path + path
+        payload = self._format_payload(params)
+        result = CONN.request_methods[method](url=path, data=payload, **CONN.headers)
+        if result.ok:
+            caller_inst = params.pop("self")
+            caller_inst._add_attr(result.json().get("result", result.json()))
+            if inspect.currentframe().f_back.f_code.co_name == "create":
+                SESSION_ENTITIES.add(caller_inst)
+        return result
+
+    def clean_session(self, max_attempts=5):
+        attempt = 1
+        while SESSION_ENTITIES and attempt <= max_attempts:
+            for entity in SESSION_ENTITIES[::-1]:
+                try:
+                    if entity.delete().ok:
+                        SESSION_ENTITIES.remove(entity)
+                except Exception as e:
+                    pass  # Ignore errors until we run out of attempts
+            attempt += 1
+        if SESSION_ENTITIES:
+            print(f"Some session entities could not be deleted: {SESSION_ENTITIES}")
+
+    def _to_dict(self):
+        """Return a JSON representation of the instance."""
+        return {
+            k: v._to_dict() if isinstance(v, ~~ProductName~~) else v
+            for k, v in self.__dict__.items()
+            if not k.startswith("_") and v
+        }
+
+
+~~feature classes~~
+
+MYCLASSES = {
+    name: obj for name, obj in inspect.getmembers(sys.modules[__name__])
+    if inspect.isclass(obj) and ~~ProductName~~ in obj.mro()
+}
