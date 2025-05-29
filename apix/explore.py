@@ -12,7 +12,16 @@ from apix.parsers import apipie, test
 
 
 class AsyncExplorer:
-    def __init__(self, name=None, version=None, host_url=None, base_path=None, parser=None, data_dir=None, compact=False):
+    def __init__(
+        self,
+        name=None,
+        version=None,
+        host_url=None,
+        base_path=None,
+        parser=None,
+        data_dir=None,
+        compact=False,
+    ):
         self.name = name
         self.version = version
         self.host_url = host_url

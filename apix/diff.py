@@ -8,7 +8,9 @@ from apix.helpers import get_latest, get_previous, load_api
 
 
 class VersionDiff:
-    def __init__(self, api_name=None, ver1=None, ver2=None, data_dir=None, compact=False, mock=False):
+    def __init__(
+        self, api_name=None, ver1=None, ver2=None, data_dir=None, compact=False, mock=False
+    ):
         self.api_name = api_name
         self.ver1 = ver1
         self.ver2 = ver2
@@ -67,7 +69,7 @@ class VersionDiff:
                 added[key] = values
         return added, changed
 
-    def _list_diff(self, list1, list2):
+    def _list_diff(self, list1, list2):  # noqa: PLR0912 (allowing for deep nesting)
         """Recursively search a list for differences"""
         added, changed = [], []
         if list1 == list2:
