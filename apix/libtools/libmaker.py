@@ -1,6 +1,5 @@
 """This module provides the capability to create a new nailgun version."""
 
-import attr
 from logzero import logger
 
 from apix import helpers
@@ -15,12 +14,13 @@ TEMPLATE_MAKERS = {
 }
 
 
-@attr.s()
 class LibMaker:
-    api_name = attr.ib(default=None)
-    api_version = attr.ib(default=None)
-    template_name = attr.ib(default=None)
-    data_dir = attr.ib(default=None)
+    def __init__(self, api_name=None, api_version=None, template_name=None, data_dir=None):
+        self.api_name = api_name
+        self.api_version = api_version
+        self.template_name = template_name
+        self.data_dir = data_dir
+        self.__attrs_post_init__()
 
     def __attrs_post_init__(self):
         if not self.api_name:

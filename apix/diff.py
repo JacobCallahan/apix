@@ -1,22 +1,22 @@
 """Determine the changes between two API versions."""
 from pathlib import Path
 
-import attr
 from logzero import logger
 import yaml
 
 from apix.helpers import get_latest, get_previous, load_api
 
 
-@attr.s()
 class VersionDiff:
-    api_name = attr.ib(default=None)
-    ver1 = attr.ib(default=None)
-    ver2 = attr.ib(default=None)
-    data_dir = attr.ib(default=None)
-    compact = attr.ib(default=False)
-    mock = attr.ib(default=False, repr=False)
-    _vdiff = attr.ib(default={})
+    def __init__(self, api_name=None, ver1=None, ver2=None, data_dir=None, compact=False, mock=False):
+        self.api_name = api_name
+        self.ver1 = ver1
+        self.ver2 = ver2
+        self.data_dir = data_dir
+        self.compact = compact
+        self.mock = mock
+        self._vdiff = {}
+        self.__attrs_post_init__()
 
     def __attrs_post_init__(self):
         """Load the API versions, if not provided"""
@@ -67,7 +67,7 @@ class VersionDiff:
                 added[key] = values
         return added, changed
 
-    def _list_diff(self, list1, list2):  # noqa: PLR0912 (allowing for deep nesting)
+    def _list_diff(self, list1, list2):
         """Recursively search a list for differences"""
         added, changed = [], []
         if list1 == list2:

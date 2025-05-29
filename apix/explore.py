@@ -4,7 +4,6 @@ from pathlib import Path
 import time
 
 import aiohttp
-import attr
 from logzero import logger
 import requests
 import yaml
@@ -12,17 +11,18 @@ import yaml
 from apix.parsers import apipie, test
 
 
-@attr.s()
 class AsyncExplorer:
-    name = attr.ib(default=None)
-    version = attr.ib(default=None)
-    host_url = attr.ib(default=None)
-    base_path = attr.ib(default=None)
-    parser = attr.ib(default=None)
-    data_dir = attr.ib(default=None)
-    compact = attr.ib(default=False)
-    _data = attr.ib(default=attr.Factory(dict), repr=False)
-    _queue = attr.ib(default=attr.Factory(list), repr=False)
+    def __init__(self, name=None, version=None, host_url=None, base_path=None, parser=None, data_dir=None, compact=False):
+        self.name = name
+        self.version = version
+        self.host_url = host_url
+        self.base_path = base_path
+        self.parser = parser
+        self.data_dir = data_dir
+        self.compact = compact
+        self._data = {}
+        self._queue = []
+        self.__attrs_post_init__()
 
     def __attrs_post_init__(self):
         """perform the more complex steps of class initialization"""

@@ -2,17 +2,16 @@
 import builtins
 from pathlib import Path
 
-import attr
 from logzero import logger
 
 from apix.helpers import merge_dicts, shift_text
 
 
-@attr.s()
 class EntityMaker:
-    api_dict = attr.ib(repr=False)
-    api_name = attr.ib()
-    api_version = attr.ib()
+    def __init__(self, api_dict, api_name, api_version):
+        self.api_dict = api_dict
+        self.api_name = api_name
+        self.api_version = api_version
 
     @staticmethod
     def name_to_class(entity_name):
@@ -233,11 +232,11 @@ class EntityMaker:
         logger.info(f"It is recommended to run `black {save_file}`")
 
 
-@attr.s()
 class AdvancedMaker:
-    api_dict = attr.ib(repr=False)
-    api_name = attr.ib()
-    api_version = attr.ib()
+    def __init__(self, api_dict, api_name, api_version):
+        self.api_dict = api_dict
+        self.api_name = api_name
+        self.api_version = api_version
 
     def make(self):
         """Make all the changes needed to create the advanced library version"""
