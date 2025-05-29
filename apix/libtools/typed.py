@@ -36,12 +36,22 @@ class TemplateManager:
 
 
 class CustomEntityMaker:
-    def __init__(self, api_dict, api_name, api_version, ff_types=None, template_manager=None, special_mappings=None):
+    def __init__(
+        self,
+        api_dict,
+        api_name,
+        api_version,
+        ff_types=None,
+        template_manager=None,
+        special_mappings=None,
+    ):
         self.api_dict = api_dict
         self.api_name = api_name
         self.api_version = api_version
         self.ff_types = ff_types if ff_types is not None else set()
-        self.template_manager = template_manager if template_manager is not None else TemplateManager()
+        self.template_manager = (
+            template_manager if template_manager is not None else TemplateManager()
+        )
         self.special_mappings = special_mappings if special_mappings is not None else {}
         self.__attrs_post_init__()
 
