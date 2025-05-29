@@ -8,15 +8,14 @@ Parser classes must currently implement the following methods:
 
 https://www.google.com/search?q=apix
 """
-import attr
 from lxml import html
 
 
-@attr.s()
 class TestParser:
     """Parser class for testing purposes only."""
 
-    _data = attr.ib(default={}, repr=False)
+    def __init__(self):
+        self._data = {}
 
     def _data_to_yaml(self, index):
         """Translate a url and text into 'paths' and 'parameters'"""

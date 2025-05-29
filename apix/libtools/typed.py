@@ -4,7 +4,6 @@ from pathlib import Path
 import re
 import subprocess
 
-import attr
 from logzero import logger
 import yaml
 
@@ -36,14 +35,15 @@ class TemplateManager:
         return result
 
 
-@attr.s()
 class CustomEntityMaker:
-    api_dict = attr.ib(repr=False)
-    api_name = attr.ib()
-    api_version = attr.ib()
-    ff_types = attr.ib(factory=set, repr=False)  # Track fauxfactory types needed
-    template_manager = attr.ib(factory=TemplateManager, repr=False)
-    special_mappings = attr.ib(factory=dict, repr=False)  # Special entity mappings from YAML
+    def __init__(self, api_dict, api_name, api_version, ff_types=None, template_manager=None, special_mappings=None):
+        self.api_dict = api_dict
+        self.api_name = api_name
+        self.api_version = api_version
+        self.ff_types = ff_types if ff_types is not None else set()
+        self.template_manager = template_manager if template_manager is not None else TemplateManager()
+        self.special_mappings = special_mappings if special_mappings is not None else {}
+        self.__attrs_post_init__()
 
     def __attrs_post_init__(self):
         """Load special mappings from YAML file after initialization"""
@@ -849,7 +849,7 @@ class CustomEntityMaker:
         # Write the file and format it
         self._write_and_format_file(save_file, loaded_main_template)
 
-    def _write_and_format_file(self, file_path: Path, content: str):
+    def _write_and_format_file(self, file_path, content):
         """Write content to file and format with ruff"""
         if file_path.exists():
             logger.warning(f"Overwriting {file_path}")
@@ -865,11 +865,11 @@ class CustomEntityMaker:
             logger.warning(f"Ruff linting failed: {e}")
 
 
-@attr.s()
 class TypedMaker:
-    api_dict = attr.ib(repr=False)
-    api_name = attr.ib()
-    api_version = attr.ib()
+    def __init__(self, api_dict, api_name, api_version):
+        self.api_dict = api_dict
+        self.api_name = api_name
+        self.api_version = api_version
 
     def make(self):
         """Make all the changes needed to create the typed library version"""
