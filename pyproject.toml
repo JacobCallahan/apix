@@ -24,6 +24,7 @@ dependencies = [
     "attrs",
     # "cchardet",
     "click",
+    "rich-click",
     "logzero",
     "lxml",
     "setuptools",

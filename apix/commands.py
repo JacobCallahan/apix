@@ -1,5 +1,7 @@
 """Main module for apix's interface."""
-import click
+from rich import print
+from rich.table import Table
+import rich_click as click
 
 from apix import helpers, logger
 from apix.diff import VersionDiff
@@ -228,15 +230,23 @@ def list(subject, api_name, data_dir):
     if subject == "apis":
         api_list = helpers.get_api_list(data_dir)
         if api_list:
-            print("\n".join(api_list))
+            table = Table(title="Available APIs")
+            table.add_column("API Name", style="cyan")
+            for api in api_list:
+                table.add_row(api)
+            print(table)
         else:
             print(f"Unable to find saved APIs in {data_dir}")
     elif subject == "versions" and api_name:
         ver_list = helpers.get_ver_list(api_name, data_dir)
         if ver_list:
-            print("\n".join(ver_list))
+            table = Table(title=f"Available Versions for {api_name}")
+            table.add_column("Version", style="cyan")
+            for ver in ver_list:
+                table.add_row(ver)
+            print(table)
         else:
-            print(f"Unable to find saved versions in {data_dir}")
+            print(f"Unable to find saved versions for {api_name} in {data_dir}")
 
 
 if __name__ == "__main__":
