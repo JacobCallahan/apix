@@ -1,32 +1,34 @@
 """Module handling internal and dependency logging."""
-import logging
+import sys
 
-import logzero
+from loguru import logger
 import urllib3
 
 
-def setup_logzero(level="info", path="logs/apix.log"):
-    log_fmt = "%(color)s[%(levelname)s %(asctime)s]%(end_color)s %(message)s"
-    if level == "debug":
-        level = logging.DEBUG
-        log_fmt = (
-            "%(color)s[%(levelname)1.1s %(asctime)s %(module)s:%(lineno)d]"
-            "%(end_color)s %(message)s"
-        )
-    elif level == "info":
-        level = logging.INFO
-    elif level == "warning":
-        level = logging.WARNING
-    elif level == "error":
-        level = logging.ERROR
-    elif level == "critical":
-        level = logging.CRITICAL
-
-    formatter = logzero.LogFormatter(fmt=log_fmt)
-    logzero.setup_default_logger(formatter=formatter)
-    logzero.loglevel(level)
-    logzero.logfile(path, loglevel=level, maxBytes=1e9, backupCount=3, formatter=formatter)
+def setup_loguru(level="info", path="logs/apix.log"):
+    logger.remove()
+    console_format = (
+        "<green>{time:YYYY-MM-DD HH:mm:ss.SSS}</green> | "
+        "<level>{level: <8}</level> | "
+        "<cyan>{name}</cyan>:<cyan>{function}</cyan>:<cyan>{line}</cyan> - "
+        "<level>{message}</level>"
+    )
+    file_format = (
+        "{time:YYYY-MM-DD HH:mm:ss.SSS} | " "{level: <8} | " "{name}:{function}:{line} - {message}"
+    )
+    logger.add(
+        sys.stderr,
+        level=level.upper(),
+        format=console_format,
+    )
+    logger.add(
+        path,
+        level=level.upper(),
+        rotation="10 MB",
+        retention="3 days",
+        format=file_format,
+    )
 
 
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
-setup_logzero()
+setup_loguru()

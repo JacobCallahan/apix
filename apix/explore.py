@@ -4,7 +4,7 @@ from pathlib import Path
 import time
 
 import aiohttp
-from logzero import logger
+from loguru import logger
 import requests
 import yaml
 

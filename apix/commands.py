@@ -21,7 +21,7 @@ def _version():
     type=click.Choice(["debug", "info", "warning", "error", "critical"]),
     default="info",
     help="The log level to use.",
-    callback=lambda ctx, param, value: logger.setup_logzero(value),
+    callback=lambda ctx, param, value: logger.setup_loguru(value),
     is_eager=True,
     expose_value=False,
 )

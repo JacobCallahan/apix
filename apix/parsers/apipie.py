@@ -6,7 +6,7 @@ Parser classes must currently implement the following methods:
     yaml_format - Returns yaml-friendly dict of the compiled data.
     scrape_content - Returns a dict of params and paths from a single page.
 """
-from logzero import logger
+from loguru import logger
 
 from apix.helpers import clean_string
 

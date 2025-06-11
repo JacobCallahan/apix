@@ -25,7 +25,7 @@ dependencies = [
     # "cchardet",
     "click",
     "rich-click",
-    "logzero",
+    "loguru",
     "lxml",
     "setuptools",
     "pyyaml",
