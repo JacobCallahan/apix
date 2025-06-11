@@ -1,6 +1,6 @@
 """This module provides the capability to create a new nailgun version."""
 
-from logzero import logger
+from loguru import logger
 
 from apix import helpers
 from apix.libtools import advanced, basic, intermediate, nailgun, typed

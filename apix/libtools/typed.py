@@ -4,7 +4,7 @@ from pathlib import Path
 import re
 import subprocess
 
-from logzero import logger
+from loguru import logger
 import yaml
 
 from apix.helpers import shift_text

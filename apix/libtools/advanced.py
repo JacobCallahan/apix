@@ -2,7 +2,7 @@
 import builtins
 from pathlib import Path
 
-from logzero import logger
+from loguru import logger
 
 from apix.helpers import merge_dicts, shift_text
 
