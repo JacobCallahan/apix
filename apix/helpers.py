@@ -4,7 +4,7 @@ from copy import deepcopy
 import html
 from pathlib import Path
 
-from logzero import logger
+from loguru import logger
 import yaml
 
 

@@ -1,7 +1,7 @@
 """This module provides the capability to create a new nailgun version."""
 from pathlib import Path
 
-from logzero import logger
+from loguru import logger
 
 
 class EntityMaker:
