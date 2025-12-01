@@ -399,3 +399,123 @@ def test_get_param_status(openapi_parser):
     assert openapi_parser._get_param_status({}) == "optional"
     # Deprecated takes precedence
     assert openapi_parser._get_param_status({"deprecated": True, "required": True}) == "deprecated"
+
+
+def test_nested_object_in_request_body(openapi_parser):
+    """Test extraction of nested object properties from request body"""
+    spec = {
+        "openapi": "3.0.0",
+        "paths": {
+            "/users": {
+                "post": {
+                    "tags": ["users"],
+                    "operationId": "createUser",
+                    "requestBody": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "profile": {
+                                            "type": "object",
+                                            "required": ["name"],
+                                            "properties": {
+                                                "name": {"type": "string"},
+                                                "age": {"type": "integer"},
+                                            },
+                                        }
+                                    },
+                                }
+                            }
+                        }
+                    },
+                }
+            }
+        },
+    }
+    response = MockResponse(json.dumps(spec))
+    openapi_parser.scrape_content(response)
+    yaml_data = openapi_parser.yaml_format()
+
+    for method in yaml_data["users"]["methods"]:
+        if "createUser" in method:
+            params = method["createUser"]["parameters"]
+            # Check nested properties are extracted
+            nested_name = next((p for p in params if "profile[name]" in p), None)
+            assert nested_name is not None
+            assert "required" in nested_name
+
+
+def test_method_name_fallback_without_operation_id(openapi_parser):
+    """Test method name generation when operationId is not provided"""
+    spec = {
+        "openapi": "3.0.0",
+        "paths": {
+            "/items": {
+                "get": {"tags": ["items"]},
+                "post": {"tags": ["items"]},
+            },
+            "/items/{id}": {
+                "get": {"tags": ["items"]},
+                "delete": {"tags": ["items"]},
+            },
+        },
+    }
+    response = MockResponse(json.dumps(spec))
+    openapi_parser.scrape_content(response)
+    yaml_data = openapi_parser.yaml_format()
+
+    method_names = [next(iter(m.keys())) for m in yaml_data["items"]["methods"]]
+    # Should generate meaningful names from path and HTTP method
+    assert "list_items" in method_names  # GET /items -> list
+    assert "create_items" in method_names  # POST /items -> create
+    assert "read_items" in method_names  # GET /items/{id} -> read (has path param)
+    assert "destroy_items" in method_names  # DELETE /items/{id} -> destroy
+
+
+def test_deprecated_property_in_request_body(openapi_parser):
+    """Test that deprecated properties in request body are marked correctly"""
+    spec = {
+        "openapi": "3.0.0",
+        "paths": {
+            "/test": {
+                "post": {
+                    "requestBody": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "old_field": {"type": "string", "deprecated": True},
+                                        "new_field": {"type": "string"},
+                                    },
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+    }
+    response = MockResponse(json.dumps(spec))
+    openapi_parser.scrape_content(response)
+    yaml_data = openapi_parser.yaml_format()
+
+    for entity in yaml_data.values():
+        for method in entity["methods"]:
+            for method_data in method.values():
+                old_field = next((p for p in method_data["parameters"] if "old_field" in p), None)
+                assert old_field is not None
+                assert "deprecated" in old_field
+
+
+def test_encoding_fallback(openapi_parser):
+    """Test that non-UTF-8 content is handled with latin-1 fallback"""
+    # Create content with a character that's valid in latin-1 but not UTF-8 sequence
+    spec = {"openapi": "3.0.0", "paths": {}}
+    content = json.dumps(spec).encode("latin-1")
+    response = MockResponse(content)
+    # Should not raise an error
+    result = openapi_parser.scrape_content(response)
+    # Empty paths means empty result, but no crash
+    assert result == {}

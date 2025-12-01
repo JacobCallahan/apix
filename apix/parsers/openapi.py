@@ -49,6 +49,31 @@ class OpenAPI:
         return "any"
 
     @staticmethod
+    def _get_property_status(prop_schema, prop_name, required_fields):
+        """Determine the status of a property (deprecated/required/optional)"""
+        if prop_schema.get("deprecated", False):
+            return "deprecated"
+        if prop_name in required_fields:
+            return "required"
+        return "optional"
+
+    @staticmethod
+    def _get_property_type(prop_schema):
+        """Extract the type of a property, handling arrays and refs"""
+        prop_type = prop_schema.get("type", "any")
+
+        if prop_type == "array" and "items" in prop_schema:
+            items = prop_schema["items"]
+            if "$ref" in items:
+                item_type = items["$ref"].split("/")[-1]
+            else:
+                item_type = items.get("type", "any")
+            return f"array of {item_type}"
+        if "$ref" in prop_schema:
+            return prop_schema["$ref"].split("/")[-1]
+        return prop_type
+
+    @staticmethod
     def _get_request_body_params(request_body, prefix=""):
         """Extract parameters from request body schema"""
         params = []
@@ -76,18 +101,8 @@ class OpenAPI:
 
         for prop_name, prop_schema in properties.items():
             full_name = f"{prefix}[{prop_name}]" if prefix else prop_name
-            status = "required" if prop_name in required_fields else "optional"
-            prop_type = prop_schema.get("type", "any")
-
-            if prop_type == "array" and "items" in prop_schema:
-                items = prop_schema["items"]
-                if "$ref" in items:
-                    item_type = items["$ref"].split("/")[-1]
-                else:
-                    item_type = items.get("type", "any")
-                prop_type = f"array of {item_type}"
-            elif "$ref" in prop_schema:
-                prop_type = prop_schema["$ref"].split("/")[-1]
+            status = OpenAPI._get_property_status(prop_schema, prop_name, required_fields)
+            prop_type = OpenAPI._get_property_type(prop_schema)
 
             params.append(f"{full_name} ~ {status} ~ {prop_type}")
 
@@ -96,9 +111,13 @@ class OpenAPI:
                 nested_required = set(prop_schema.get("required", []))
                 for nested_name, nested_schema in prop_schema["properties"].items():
                     nested_full_name = f"{full_name}[{nested_name}]"
-                    nested_status = "required" if nested_name in nested_required else "optional"
-                    nested_type = nested_schema.get("type", "any")
+                    nested_status = OpenAPI._get_property_status(
+                        nested_schema, nested_name, nested_required
+                    )
+                    nested_type = OpenAPI._get_property_type(nested_schema)
                     params.append(f"{nested_full_name} ~ {nested_status} ~ {nested_type}")
+
+        return params
 
         return params
 
@@ -183,8 +202,8 @@ class OpenAPI:
                 continue
             required_fields = set(schema.get("required", []))
             for prop_name, prop_schema in schema["properties"].items():
-                status = "required" if prop_name in required_fields else "optional"
-                prop_type = prop_schema.get("type", "any")
+                status = self._get_property_status(prop_schema, prop_name, required_fields)
+                prop_type = self._get_property_type(prop_schema)
                 params.append(f"{prop_name} ~ {status} ~ {prop_type}")
         return params
 
@@ -250,7 +269,11 @@ class OpenAPI:
 
         # Try to decode if bytes
         if isinstance(content, bytes):
-            content = content.decode("utf-8")
+            try:
+                content = content.decode("utf-8")
+            except UnicodeDecodeError:
+                logger.warning("Failed to decode content as UTF-8, trying latin-1 fallback")
+                content = content.decode("latin-1")
 
         # Try JSON first, then YAML
         try:
