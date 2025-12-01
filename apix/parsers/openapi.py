@@ -9,16 +9,10 @@ OpenAPI parsers work differently from page-based parsers:
     - They don't need pull_links since OpenAPI specs are self-contained
     - They parse the entire spec in one scrape_content call
 """
-from __future__ import annotations
-
 import json
-from typing import TYPE_CHECKING, Any
 
 from loguru import logger
 import yaml
-
-if TYPE_CHECKING:
-    import requests
 
 
 class OpenAPI:
@@ -239,9 +233,7 @@ class OpenAPI:
                 formatted_path = f"{http_method.upper()} {path}"
                 self._add_or_update_method(entity, method_name, formatted_path, params)
 
-    def scrape_content(
-        self, result: requests.Response | bytes | str | Any
-    ) -> dict[str, Any]:
+    def scrape_content(self, result):
         """Parse the OpenAPI spec from an HTTP response or raw content.
 
         Args:
