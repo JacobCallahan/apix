@@ -9,10 +9,16 @@ OpenAPI parsers work differently from page-based parsers:
     - They don't need pull_links since OpenAPI specs are self-contained
     - They parse the entire spec in one scrape_content call
 """
+from __future__ import annotations
+
 import json
+from typing import TYPE_CHECKING, Any
 
 from loguru import logger
 import yaml
+
+if TYPE_CHECKING:
+    import requests
 
 
 class OpenAPI:
@@ -189,14 +195,21 @@ class OpenAPI:
         return params
 
     def _add_or_update_method(self, entity, method_name, formatted_path, params):
-        """Add a new method or update an existing one with additional paths/params"""
+        """Add a new method or update an existing one with additional paths/params.
+
+        Args:
+            entity: The entity name (e.g., 'pets', 'users')
+            method_name: The method/operation name (e.g., 'createPet', 'listUsers')
+            formatted_path: HTTP method and path (e.g., 'GET /pets')
+            params: List of parameter strings in format 'name ~ status ~ type'
+        """
         for existing_method in self._data[entity]["methods"]:
             if method_name in existing_method:
                 existing_method[method_name]["paths"].append(formatted_path)
+                # Use set for O(1) lookup of existing params
                 existing_params = set(existing_method[method_name].get("params", []))
-                for param in params:
-                    if param not in existing_params:
-                        existing_method[method_name]["params"].append(param)
+                new_params = [p for p in params if p not in existing_params]
+                existing_method[method_name]["params"].extend(new_params)
                 return
 
         self._data[entity]["methods"].append(
@@ -226,8 +239,21 @@ class OpenAPI:
                 formatted_path = f"{http_method.upper()} {path}"
                 self._add_or_update_method(entity, method_name, formatted_path, params)
 
-    def scrape_content(self, result):
-        """Parse the OpenAPI spec from the HTTP response"""
+    def scrape_content(
+        self, result: requests.Response | bytes | str | Any
+    ) -> dict[str, Any]:
+        """Parse the OpenAPI spec from an HTTP response or raw content.
+
+        Args:
+            result: Can be one of:
+                - A requests.Response object with a .content attribute
+                - Raw bytes containing the OpenAPI spec
+                - A string containing the OpenAPI spec (JSON or YAML)
+                - Any object with a .content attribute containing bytes
+
+        Returns:
+            A dictionary of parsed entities and their methods, or empty dict on error.
+        """
         content = result.content if hasattr(result, "content") else result
 
         # Try to decode if bytes
