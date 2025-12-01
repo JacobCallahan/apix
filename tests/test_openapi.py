@@ -244,9 +244,7 @@ def test_http_method_in_paths(openapi_parser, sample_openapi3_spec):
         for method_data in method.values():
             for path in method_data["paths"]:
                 # Path should start with HTTP method
-                assert any(
-                    path.startswith(m) for m in ["GET", "POST", "PUT", "PATCH", "DELETE"]
-                )
+                assert any(path.startswith(m) for m in ["GET", "POST", "PUT", "PATCH", "DELETE"])
 
 
 def test_request_body_parameters(openapi_parser, sample_openapi3_spec):
@@ -277,9 +275,7 @@ def test_swagger2_body_parameters(openapi_parser, sample_swagger2_spec):
         if "createUser" in method:
             params = method["createUser"]["parameters"]
             # Check that body properties are included
-            username_param = next(
-                (p for p in params if "username" in p and "required" in p), None
-            )
+            username_param = next((p for p in params if "username" in p and "required" in p), None)
             assert username_param is not None
 
 
