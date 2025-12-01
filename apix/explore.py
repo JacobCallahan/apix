@@ -8,7 +8,7 @@ from loguru import logger
 import requests
 import yaml
 
-from apix.parsers import apipie, test
+from apix.parsers import apipie, openapi, test
 
 
 class AsyncExplorer:
@@ -42,6 +42,8 @@ class AsyncExplorer:
             self.parser = apipie.APIPie()
         elif self.parser.lower() == "test":
             self.parser = test.TestParser()
+        elif self.parser.lower() == "openapi":
+            self.parser = openapi.OpenAPI()
         if not self.parser or isinstance(self.parser, str):
             logger.warning("No known parser specified! Please review documentation.")
 
