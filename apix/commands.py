@@ -10,9 +10,9 @@ from apix.libtools.libmaker import LibMaker
 
 
 def _version():
-    import pkg_resources
+    from importlib.metadata import version
 
-    return pkg_resources.get_distribution("apix").version
+    return version("apix")
 
 
 @click.group()
